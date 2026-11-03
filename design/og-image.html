@@ -1,0 +1,62 @@
+<!doctype html>
+<!--
+  Source of the link-preview image (public/og-image.png, 1200x630).
+  To regenerate: open this file in Chrome, set the window/DevTools device size
+  to 1200x630, and take a screenshot (DevTools > Ctrl+Shift+P > "Capture screenshot").
+  Needs `npm install` first (uses the font from node_modules).
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      @font-face {
+        font-family: 'SG';
+        src: url('../node_modules/@fontsource-variable/space-grotesk/files/space-grotesk-latin-wght-normal.woff2');
+        font-weight: 300 700;
+      }
+      @font-face {
+        font-family: 'JB';
+        src: url('../node_modules/@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2');
+        font-weight: 100 800;
+      }
+      * { box-sizing: border-box; margin: 0; }
+      body { width: 1200px; height: 630px; background: #05070d; position: relative; overflow: hidden; font-family: 'SG', sans-serif; color: #eef2f8; }
+      .grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(143,200,255,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(143,200,255,.06) 1px, transparent 1px); background-size: 48px 48px; }
+      svg { position: absolute; right: -40px; top: 0; }
+      .copy { position: absolute; left: 72px; top: 0; bottom: 0; width: 620px; display: flex; flex-direction: column; justify-content: center; }
+      .label { font-family: 'JB', monospace; font-size: 20px; letter-spacing: .18em; text-transform: uppercase; color: #8fc8ff; }
+      h1 { font-size: 92px; line-height: .98; font-weight: 500; letter-spacing: -.035em; margin: 26px 0 30px; }
+      p { font-size: 26px; color: #8b94a7; line-height: 1.4; }
+      .bar { position: absolute; left: 72px; bottom: 56px; width: 96px; height: 4px; background: #2f7bff; }
+    </style>
+  </head>
+  <body>
+    <div class="grid"></div>
+    <svg id="net" width="640" height="630" viewBox="0 0 640 630"></svg>
+    <div class="copy">
+      <span class="label">Computer Science · Network Security</span>
+      <h1>Surakshit<br />Kessoonath</h1>
+      <p>University of Technology, Mauritius</p>
+    </div>
+    <div class="bar"></div>
+    <script>
+      // Deterministic "secure core" graphic
+      const svg = document.getElementById('net');
+      const NS = 'http://www.w3.org/2000/svg';
+      const add = (tag, attrs) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); svg.appendChild(e); return e; };
+      const cx = 360, cy = 315;
+      let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+      const pts = [];
+      for (let i = 0; i < 34; i++) { const a = rnd() * Math.PI * 2, r = 190 + rnd() * 120; pts.push([cx + Math.cos(a) * r * 1.05, cy + Math.sin(a) * r]); }
+      pts.forEach((p, i) => pts.forEach((q, j) => { if (j > i && Math.hypot(p[0]-q[0], p[1]-q[1]) < 150) add('line', { x1: p[0], y1: p[1], x2: q[0], y2: q[1], stroke: '#2f7bff', 'stroke-opacity': .28, 'stroke-width': 1.2 }); }));
+      pts.forEach((p) => add('circle', { cx: p[0], cy: p[1], r: 4.5, fill: '#8fc8ff', 'fill-opacity': .85 }));
+      add('ellipse', { cx, cy, rx: 250, ry: 90, fill: 'none', stroke: '#8fc8ff', 'stroke-opacity': .3, transform: `rotate(-24 ${cx} ${cy})` });
+      const hex = (r) => Array.from({ length: 6 }, (_, k) => { const a = Math.PI / 3 * k - Math.PI / 2; return [cx + Math.cos(a) * r, cy + Math.sin(a) * r]; });
+      const outer = hex(130), inner = hex(62);
+      add('polygon', { points: outer.map((p) => p.join(',')).join(' '), fill: '#0a1330', stroke: '#2f7bff', 'stroke-width': 3, 'stroke-linejoin': 'round' });
+      outer.forEach((p, k) => { add('line', { x1: p[0], y1: p[1], x2: inner[k][0], y2: inner[k][1], stroke: '#2f7bff', 'stroke-width': 1.6, 'stroke-opacity': .7 }); });
+      add('polygon', { points: inner.map((p) => p.join(',')).join(' '), fill: 'none', stroke: '#2f7bff', 'stroke-width': 2, 'stroke-linejoin': 'round' });
+      add('circle', { cx, cy, r: 12, fill: '#8fc8ff' });
+    </script>
+  </body>
+</html>
