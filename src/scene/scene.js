@@ -237,18 +237,32 @@ export async function createScene(canvas) {
     try {
       const gltf = await new GLTFLoader().loadAsync(MODEL_URL);
       const model = gltf.scene;
-      const box = new THREE.Box3().setFromObject(model);
-      const size = box.getSize(new THREE.Vector3()).length() || 1;
-      const center = box.getCenter(new THREE.Vector3());
-      model.position.sub(center);
-      const wrapper = new THREE.Group();
-      wrapper.add(model);
-      wrapper.scale.setScalar(3.2 / size);
-      core.remove(centre);
-      core.add(wrapper);
+      // Built in Blender in site units (core radius 1.4), so no rescaling. Meshes are recoloured by name from the theme.
+      const glow = (color, opacity = 1) => new THREE.MeshBasicMaterial({ color, transparent: opacity < 1, opacity, depthWrite: opacity >= 1 });
+      const g = {};
+      model.traverse((o) => {
+        if (!o.isMesh) return;
+        g[o.name] = o;
+        if (o.name === 'Plates') {
+          o.material = new THREE.MeshStandardMaterial({ color: C.navy, metalness: 0.85, roughness: 0.3, flatShading: true });
+        } else if (o.name === 'Shell') {
+          o.material = glow(C.sky, 0.12);
+          o.material.depthWrite = false;
+        } else if (o.name === 'Inner') {
+          o.material = glow(C.blue, 0.85);
+        } else {
+          o.material = glow(o.name === 'Frame' ? C.blue : C.sky);
+        }
+      });
+      if (!g.Plates) throw new Error('core.glb has no Plates mesh');
+      // hide the code-drawn core; the model takes its place inside the same rotating group
+      Object.values(parts).forEach((m) => { m.visible = false; });
+      centre.add(model);
+      parts.glb = g;
       scene.userData.usingBlender = true;
+      setTheme(document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark');
     } catch (e) {
-      /* no model shipped: procedural core stays */
+      /* no model shipped (or it failed): the code-drawn core stays */
     }
   })();
 
@@ -292,6 +306,21 @@ export async function createScene(canvas) {
       parts.wire.material.color.setHex(th.wire);
       parts.shell.material.color.setHex(th.shell);
       parts.shell.material.opacity = th.shellO;
+    }
+    if (parts.glb) {
+      const g = parts.glb;
+      g.Plates.material.color.setHex(th.solid);
+      g.Plates.material.metalness = th.metal;
+      g.Plates.material.roughness = th.rough;
+      g.Plates.material.transparent = th.solidO < 1;
+      g.Plates.material.opacity = th.solidO;
+      g.Plates.material.needsUpdate = true;
+      g.Frame.material.color.setHex(th.wire);
+      g.Nodes.material.color.setHex(th.node);
+      g.Inner.material.color.setHex(th.wire);
+      g.Inner.material.opacity = th.light ? 0.55 : 0.85;
+      g.Shell.material.color.setHex(th.shell);
+      g.Shell.material.opacity = th.shellO;
     }
     ringMat.color.setHex(th.ring);
     ringMat.opacity = th.ringO;
@@ -395,6 +424,12 @@ export async function createScene(canvas) {
       mouse.x += (mouse.tx - mouse.x) * 0.05;
       mouse.y += (mouse.ty - mouse.y) * 0.05;
 
+      if (parts.glb) {
+        // nodes and inner core breathe gently
+        const k = 1 + Math.sin(t * 1.8) * 0.07;
+        parts.glb.Nodes.scale.setScalar(k);
+        parts.glb.Inner.scale.setScalar(1 + Math.sin(t * 1.3) * 0.05);
+      }
       centre.rotation.y += dt * state.rot;
       centre.rotation.x = Math.sin(t * 0.3) * 0.15;
       nodesGroup.rotation.y -= dt * state.rot * 0.5;
