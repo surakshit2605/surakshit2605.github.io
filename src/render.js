@@ -15,6 +15,8 @@ import {
   certifications, visuals } from './data/content.js';
 import { site } from './data/site.js';
 import { icon } from './icons.js';
+import { mapMarkup } from './map.js';
+import { journeyMap } from './data/content.js';
 
 const esc = (s = '') =>
   String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -38,6 +40,7 @@ export const SECTIONS = [
   { id: 'profile', label: 'Profile' },
   { id: 'background', label: 'Background' },
   { id: 'education', label: 'Education' },
+  { id: 'map', label: 'Journey Map' },
   { id: 'skills', label: 'Skills' },
   { id: 'journey', label: 'Journey' },
   { id: 'projects', label: 'Projects' },
@@ -300,6 +303,17 @@ function backgroundSection() {
   </section>`;
 }
 
+function mapSection() {
+  return `
+  <section class="section section--map" id="map" data-scene="education" aria-labelledby="map-t">
+    <div class="wrap">
+      ${head(nextNo(), journeyMap.label, journeyMap.title).replace('class="title"', 'class="title" id="map-t"')}
+      <p class="body" data-reveal>${esc(journeyMap.intro)}</p>
+      ${mapMarkup()}
+    </div>
+  </section>`;
+}
+
 function educationSection() {
   return `
   <section class="section" id="education" data-scene="education" aria-labelledby="edu-t">
@@ -534,6 +548,7 @@ export function render() {
     profileSection() +
     backgroundSection() +
     educationSection() +
+    mapSection() +
     skillsSection() +
     journeySection() +
     projectsSection() +

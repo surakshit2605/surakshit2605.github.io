@@ -10,6 +10,7 @@ import { initTheme } from './theme.js';
 import { initInfo } from './info.js';
 import { initHeroHover } from './hero-hover.js';
 import { initPhotoFx } from './photo-fx.js';
+import { initJourneyMap } from './map.js';
 import { initAtmosphere } from './atmosphere.js';
 import { applyAccent, savedAccent } from './accents.js';
 import { initAccent } from './accent.js';
@@ -23,6 +24,7 @@ async function start() {
     el.innerHTML = logoSvg(kind) + (kind === 'loader' ? '' : '<span class="logo__word" aria-hidden="true">Surakshit</span>');
   });
   render();
+  initJourneyMap();
 
   const canvas = document.getElementById('scene');
   const scene = await createScene(canvas);

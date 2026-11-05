@@ -17,6 +17,13 @@ export function buildCsp(site) {
   const script = ["'self'"];
   const connect = ["'self'"];
   const img = ["'self'", 'data:', 'blob:'];
+  const style = ["'self'", "'unsafe-inline'"];
+
+  // 3D journey map: CesiumJS from jsDelivr, satellite imagery/terrain from Esri and Cesium ion (Bing tiles).
+  script.push('https://cdn.jsdelivr.net', "'wasm-unsafe-eval'");
+  style.push('https://cdn.jsdelivr.net');
+  connect.push('https://cdn.jsdelivr.net', 'https://server.arcgisonline.com', 'https://api.cesium.com', 'https://assets.ion.cesium.com', 'https://*.cesium.com', 'https://*.virtualearth.net', 'https://*.tiles.virtualearth.net');
+  img.push('https://server.arcgisonline.com', 'https://*.cesium.com', 'https://*.virtualearth.net', 'https://cdn.jsdelivr.net');
 
   const { provider, id } = site.analytics || {};
   if (provider === 'plausible') {
@@ -34,11 +41,11 @@ export function buildCsp(site) {
     "default-src 'self'",
     `script-src ${script.join(' ')}`,
     // GSAP/Three set styles through the CSSOM (allowed). 'unsafe-inline' is kept for style attributes only.
-    "style-src 'self' 'unsafe-inline'",
+    `style-src ${style.join(' ')}`,
     `img-src ${img.join(' ')}`,
     "font-src 'self' data:",
     `connect-src ${connect.join(' ')}`,
-    "worker-src 'self' blob:",
+    "worker-src 'self' blob: https://cdn.jsdelivr.net",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

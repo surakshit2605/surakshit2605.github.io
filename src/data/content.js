@@ -612,3 +612,41 @@ export const visuals = {
   laptop: 'visuals/laptop-glow.webp',
   hex: 'visuals/hex-panels.webp',
 };
+
+// ---------------------------------------------------------------------------------------------
+// Journey map (3D satellite). Edit freely.
+//  - cesiumToken: free token from https://cesium.com/ion (Access Tokens). Leave '' to use flat satellite imagery only.
+//  - Coordinates are decimal degrees (latitude negative in the south), copied from Google Maps.
+//  - Home is an AREA pin (Vallée des Prêtres), not the exact house, on purpose.
+// ---------------------------------------------------------------------------------------------
+export const journeyMap = {
+  cesiumToken: '',
+  label: 'Journey Map',
+  title: 'From School to University',
+  intro: 'A real satellite view of Mauritius: where I started, where I live, and where I am building my future in computer science.',
+  start: { year: 2017, month: 1 },
+  places: {
+    home: {
+      id: 'home', tag: 'Starting point', short: 'Home', name: 'Vallée des Prêtres', place: 'Port Louis, Mauritius',
+      lat: -20.1654143, lon: 57.5334616,
+      text: 'My hometown and my personal base. Everything starts here, and every day of school and university begins and ends here.',
+      facts: [['Role', 'Starting point and personal base'], ['Area', 'Vallée des Prêtres, Port Louis']],
+    },
+    school: {
+      id: 'school', tag: 'Where it began', short: 'School', name: 'Sir Abdool Razack Mohamed SSS', place: 'La Poudrière Street, Port Louis',
+      lat: -20.1668136, lon: 57.5056846,
+      from: { y: 2017, m: 1 }, to: { y: 2024, m: 12 }, years: '2017 – 2024',
+      photo: 'journey/school.webp', photoAlt: 'Entrance of Sir Abdool Razack Mohamed State Secondary School',
+      text: 'My previous school, and where my academic journey began. My early studies and first steps in education happened here.',
+      facts: [['Years', '2017 – 2024'], ['Type', 'State secondary school']],
+    },
+    uni: {
+      id: 'uni', tag: 'Where I am building my future', short: 'University', name: 'University of Technology, Mauritius (UTM)', place: 'La Tour Koenig, Pointe aux Sables',
+      lat: -20.1769432, lon: 57.4670199,
+      from: { y: 2025, m: 4 }, to: { y: 2028, m: 4 }, years: 'April 2025 – April 2028',
+      photo: 'journey/uni.webp', photoAlt: 'Central administration building at the University of Technology, Mauritius',
+      text: 'Where I am studying today and building my future in computer science and network security.',
+      facts: [['Degree', 'BSc Computer Science – Network Security'], ['Started', 'April 2025'], ['Expected completion', 'April 2028']],
+    },
+  },
+};
