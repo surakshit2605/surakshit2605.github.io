@@ -42,6 +42,8 @@ export function mapMarkup() {
   const chips = [['overview', 'Overview'], ...ORDER.map((id) => [id, P[id].short])].map(([id, t]) => `<button class="jm-chip" type="button" data-id="${id}">${esc(t)}</button>`).join('');
   return `
   <div class="jm" id="jm">
+   <div class="jm__track" id="jm-track">
+    <div class="jm__sticky" id="jm-sticky">
     <div class="jm__stage" id="jm-stage">
       <div class="jm__globe" id="jm-globe"></div>
       <div class="jm__tint"></div>
@@ -50,12 +52,17 @@ export function mapMarkup() {
       <div class="jm__load" id="jm-load"><span class="jm__spin"></span><span id="jm-load-t">Loading satellite view…</span></div>
       <div class="jm__hud jm__hud--tl"><span>LAT <b id="jm-lat">—</b></span><span>LON <b id="jm-lon">—</b></span><span>ALT <b id="jm-alt">—</b></span></div>
       <div class="jm__hud jm__hud--tr"><span id="jm-mode">OVERVIEW</span></div>
+      <nav class="jm-idx" id="jm-idx" aria-label="Journey stops">${[['overview', 'Mauritius'], ['home', P.home.short], ['school', P.school.short], ['uni', P.uni.short], ['route', 'The route']].map(([id, t], i) => `<button type="button" data-id="${id}"><span>${String(i + 1).padStart(2, '0')}</span>${esc(t)}</button>`).join('')}</nav>
+      <i class="jm__prog"><b id="jm-prog"></b></i>
+      <p class="jm__scroll" id="jm-scrollhint"><span></span><em id="jm-scrolltxt">Scroll to travel</em></p>
       <button class="jm__explore" id="jm-explore" type="button">Explore the map</button>
       <p class="jm__hint" id="jm-hint">Drag to rotate · scroll or pinch to zoom · right-drag or two fingers to tilt</p>
       <div class="jm__nav" id="jm-nav">${chips}<button class="jm-chip jm-chip--play" id="jm-play" type="button">▶ Play the journey</button></div>
       <i class="jm-br tl"></i><i class="jm-br tr"></i><i class="jm-br bl"></i><i class="jm-br brr"></i>
     </div>
     <aside class="jm__panel" id="jm-panel" aria-live="polite"></aside>
+    </div>
+   </div>
     <div class="jm__tl" id="jm-tl"></div>
   </div>`;
 }
@@ -68,24 +75,27 @@ function progressPct(p) {
   return Math.max(0, Math.min(100, ((n - a) / (b - a)) * 100));
 }
 
+const CH = { overview: 1, home: 2, school: 3, uni: 4, route: 5 };
+const chap = (id) => `${String(CH[id]).padStart(2, '0')} / 05 · `;
+
 function panelHtml(id) {
   const P = J.places;
   if (id === 'overview') {
-    return `<p class="jm-p__tag">Overview</p><h3>Port Louis, Mauritius</h3>
+    return `<p class="jm-p__tag">${chap(id)}Overview</p><h3>Port Louis, Mauritius</h3>
       <p>Three real places in one story. Start at home, follow the line to school, then on to university.</p>
       <ul class="jm-p__facts"><li><span>1</span>Home, my starting point</li><li><span>2</span>School, where it began</li><li><span>3</span>University, where I am building my future</li></ul>
       <p class="jm-p__cta">Tap a marker, a chip below the map, or press play.</p>`;
   }
   if (id === 'route') {
     const d1 = haversine(P.home, P.school), d2 = haversine(P.school, P.uni);
-    return `<p class="jm-p__tag">The whole route</p><h3>${km(d1 + d2)} in a straight line</h3>
+    return `<p class="jm-p__tag">${chap(id)}The whole route</p><h3>${km(d1 + d2)} in a straight line</h3>
       <p>From home, to the school where it began, to the university where I am building my future. All within the Port Louis area.</p>
       <ul class="jm-p__facts"><li><span>H→S</span>${km(d1)}</li><li><span>S→U</span>${km(d2)}</li></ul><p class="jm-p__note">Straight-line distances, not road distances.</p>`;
   }
   const p = P[id];
   const photo = p.photo ? `<figure class="jm-p__photo"><img src="${asset(p.photo)}" alt="${esc(p.photoAlt || '')}" loading="lazy" decoding="async" /></figure>` : '';
   const prog = id === 'uni' ? (() => { const v = progressPct(p); return `<div class="jm-p__prog"><div class="jm-p__bar"><i data-pct="${v.toFixed(1)}"></i></div><p><b>${Math.round(v)}%</b> of the degree timeline · now in progress</p></div>`; })() : '';
-  return `${photo}<p class="jm-p__tag">${esc(p.tag)}</p><h3>${esc(p.name)}</h3><p class="jm-p__place">${esc(p.place)}</p>
+  return `${photo}<p class="jm-p__tag">${chap(id)}${esc(p.tag)}</p><h3>${esc(p.name)}</h3><p class="jm-p__place">${esc(p.place)}</p>
     ${p.years ? `<p class="jm-p__years">${esc(p.years)}</p>` : ''}<p>${esc(p.text)}</p>${prog}
     <dl class="jm-p__dl">${p.facts.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>`;
 }
@@ -118,79 +128,148 @@ export function initJourneyMap() {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const lite = innerWidth < 800 || (navigator.hardwareConcurrency || 8) <= 4;
   const pins = Object.fromEntries([...pinsEl.querySelectorAll('.jm-pin')].map((el) => [el.dataset.id, el]));
-  const chips = [...root.querySelectorAll('.jm-chip[data-id]')];
+  const chips = [...root.querySelectorAll('.jm-chip[data-id], .jm-idx button[data-id]')];
   $('jm-tl').innerHTML = timelineHtml();
 
   let cur = null, viewer = null, C = null, ready = false, explore = false, playing = null;
-  let orbit = null, flying = false;
+  let driving = false, disp = 0, lastT = performance.now(), shots = [];
+  const track = $('jm-track'), sticky = $('jm-sticky'), prog = $('jm-prog');
+  // Mouse (desktop): the wheel works the journey while the cursor is inside the map. Touch/small screens: page scroll does.
+  const wheelMode = matchMedia('(hover: hover) and (pointer: fine)').matches && innerWidth > 1000;
+  root.classList.toggle('jm--wheel', wheelMode);
+  const STOPS = [['overview', 0], ['home', 0.2], ['school', 0.45], ['uni', 0.7], ['route', wheelMode ? 1 : 0.93]];
+  const SPOS = Object.fromEntries(STOPS);
+  const W = { wp: 0 }; // wheel progress
+  const clamp01 = (x) => Math.max(0, Math.min(1, x));
+  const place3 = {};
 
   /* ---- UI (works even if 3D is unavailable) ---- */
+  let panelToken = 0;
   function showPanel(id) {
-    panel.innerHTML = panelHtml(id);
-    const kids = [...panel.children];
-    if (!reduce) gsap.fromTo(kids, { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, stagger: 0.06, ease: 'power3.out' });
-    const bar = panel.querySelector('.jm-p__bar i');
-    if (bar) gsap.fromTo(bar, { width: '0%' }, { width: bar.dataset.pct + '%', duration: reduce ? 0 : 1.4, delay: 0.3, ease: 'power3.out' });
+    const token = ++panelToken;
+    const enter = () => {
+      panel.innerHTML = panelHtml(id);
+      const kids = [...panel.children];
+      if (!reduce) gsap.fromTo(kids, { y: -34, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, stagger: 0.07, ease: 'power3.out' });
+      const bar = panel.querySelector('.jm-p__bar i');
+      if (bar) gsap.fromTo(bar, { width: '0%' }, { width: bar.dataset.pct + '%', duration: reduce ? 0 : 1.4, delay: 0.4, ease: 'power3.out' });
+    };
+    const old = [...panel.children];
+    gsap.killTweensOf(old);
+    if (reduce || !old.length) return enter();
+    // the previous place slides down and fades, then the next one drops in from above
+    gsap.to(old, { y: 38, opacity: 0, duration: 0.34, stagger: 0.025, ease: 'power2.in', onComplete: () => { if (token === panelToken) enter(); } });
   }
   function mark(id) {
     chips.forEach((c) => c.classList.toggle('is-on', c.dataset.id === id));
     Object.entries(pins).forEach(([k, el]) => el.classList.toggle('is-on', k === id || id === 'route'));
     root.querySelectorAll('.jm-tl__seg').forEach((b) => b.classList.toggle('is-on', b.dataset.id === id));
-    $('jm-mode').textContent = (id === 'overview' ? 'OVERVIEW' : id === 'route' ? 'ROUTE' : J.places[id].short.toUpperCase());
+    $('jm-mode').textContent = id === 'overview' ? 'OVERVIEW' : id === 'route' ? 'ROUTE' : J.places[id].short.toUpperCase();
   }
-
-  let select = function select(id, { fromPlay = false } = {}) {
-    if (!fromPlay && playing) stopPlay();
+  let showRoutes = () => {};
+  function setUI(id) {
     if (id === cur) return;
     cur = id;
-    mark(id);
-    showPanel(id);
-    fly(id);
-  };
-  chips.forEach((c) => c.addEventListener('click', () => select(c.dataset.id)));
-  Object.entries(pins).forEach(([id, el]) => el.addEventListener('click', () => select(id)));
-  root.querySelectorAll('.jm-tl__seg').forEach((b) => b.addEventListener('click', () => select(b.dataset.id)));
+    mark(id); showPanel(id); showRoutes(id);
+  }
 
-  const seq = ['home', 'school', 'uni', 'route'];
-  function stopPlay() { if (playing) { playing.kill(); playing = null; } $('jm-play').classList.remove('is-on'); $('jm-play').textContent = '▶ Play the journey'; }
-  $('jm-play').addEventListener('click', () => {
-    if (playing) return stopPlay();
-    $('jm-play').classList.add('is-on'); $('jm-play').textContent = '■ Stop';
-    cur = null;
-    const tl = gsap.timeline({ onComplete: stopPlay });
-    seq.forEach((id, i) => tl.call(() => select(id, { fromPlay: true }), null, i * 8.5));
-    tl.to({}, { duration: 8.5 });
-    playing = tl;
-  });
-
-  /* ---- 3D ---- */
-  const place3 = {};
-  function fly(id) {
-    if (!ready) return;
-    const cam = viewer.camera;
-    orbit = null; flying = true;
-    cam.lookAtTransform(C.Matrix4.IDENTITY);
-    const dur = reduce ? 0 : 3.2;
-    const done = () => {
-      flying = false;
-      if (!reduce && !explore && cur === id && shot.orbit) orbit = { ...shot.orbit, t0: performance.now() };
-    };
-    let shot;
-    if (id === 'overview') {
-      shot = {};
-      cam.flyTo({ destination: C.Cartesian3.fromDegrees(57.55, -21.76, 200000), orientation: { heading: 0, pitch: C.Math.toRadians(-50), roll: 0 }, duration: dur ? 3.6 : 0, complete: done, cancel: () => (flying = false) });
+  // Scrolling the page drives the camera. Clicking a marker/chip/timeline bar scrolls to that stop.
+  const trackTop = () => track.getBoundingClientRect().top + scrollY;
+  const range = () => Math.max(1, track.offsetHeight - sticky.offsetHeight);
+  const pageStopY = (id) => trackTop() - (parseFloat(getComputedStyle(sticky).top) || 0) + SPOS[id] * range();
+  const progress = () => wheelMode ? W.wp : clamp01((scrollY + (parseFloat(getComputedStyle(sticky).top) || 0) - trackTop()) / range());
+  let snapTween = null, snapTimer = null;
+  function go(id) {
+    if (playing) stopPlay();
+    if (!ready || explore) return setUI(id);
+    if (wheelMode) {
+      const r = stage.getBoundingClientRect();
+      if (r.top < 0 || r.bottom > innerHeight) stage.scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' });
+      if (snapTween) snapTween.kill();
+      snapTween = gsap.to(W, { wp: SPOS[id], duration: reduce ? 0 : 1.8, ease: 'power2.inOut' });
       return;
     }
-    let center, h, pitch, range;
-    if (id === 'route') {
-      const bs = C.BoundingSphere.fromPoints(ORDER.map((k) => place3[k].top));
-      center = bs.center; range = Math.max(2500, bs.radius * 2.7); h = C.Math.toRadians(15); pitch = C.Math.toRadians(-48);
-    } else {
-      const set = { home: [2600, 25, -38], school: [850, -40, -34], uni: [1000, 55, -34] }[id];
-      center = place3[id].ground; range = set[0]; h = C.Math.toRadians(set[1]); pitch = C.Math.toRadians(set[2]);
+    window.scrollTo({ top: pageStopY(id), behavior: reduce ? 'auto' : 'smooth' });
+  }
+  chips.forEach((c) => c.addEventListener('click', () => go(c.dataset.id)));
+  Object.entries(pins).forEach(([id, el]) => el.addEventListener('click', () => go(id)));
+  root.querySelectorAll('.jm-tl__seg').forEach((b) => b.addEventListener('click', () => { go(b.dataset.id); if (ready) stage.scrollIntoView({ block: 'center', behavior: 'smooth' }); }));
+
+  function stopPlay() {
+    if (playing) { playing.kill(); playing = null; }
+    $('jm-play').classList.remove('is-on'); $('jm-play').textContent = '▶ Play the journey';
+  }
+  $('jm-play').addEventListener('click', () => {
+    if (playing) return stopPlay();
+    if (!ready) return;
+    if (explore) setExplore(false);
+    $('jm-play').classList.add('is-on'); $('jm-play').textContent = '■ Stop';
+    if (wheelMode) {
+      if (snapTween) snapTween.kill();
+      const r = stage.getBoundingClientRect();
+      if (r.top < 0 || r.bottom > innerHeight) stage.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      W.wp = 0;
+      playing = gsap.to(W, { wp: 1, duration: 30, ease: 'none', onComplete: stopPlay });
+      return;
     }
-    shot = { orbit: { center, h, pitch, range } };
-    cam.flyToBoundingSphere(new C.BoundingSphere(center, 1), { offset: new C.HeadingPitchRange(h, pitch, range), duration: dur, complete: done, cancel: () => (flying = false) });
+    const o = { y: scrollY }, end = pageStopY('route');
+    const from = pageStopY('overview');
+    o.y = Math.abs(scrollY - from) > 200 && scrollY < end ? scrollY : from;
+    window.scrollTo(0, o.y);
+    playing = gsap.to(o, { y: end, duration: 30, ease: 'none', onUpdate: () => window.scrollTo(0, o.y), onComplete: stopPlay });
+  });
+  ['wheel', 'touchstart'].forEach((ev) => addEventListener(ev, () => { if (playing) stopPlay(); }, { passive: true }));
+
+  /* ---- 3D camera path ---- */
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const angLerp = (a, b, t) => { let d = ((b - a + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; return a + d * t; };
+  function buildShots() {
+    const P = J.places, rad = (d) => (d * Math.PI) / 180;
+    const set = { home: [2600, 25, -38], school: [850, -40, -34], uni: [1000, 55, -34] };
+    const arr = [{ lon: 57.55, lat: -20.25, hgt: 0, hd: 0, pit: rad(-50), rng: 261000 }];
+    ORDER.forEach((k) => { const s = set[k]; arr.push({ lon: P[k].lon, lat: P[k].lat, hgt: 0, hd: rad(s[1]), pit: rad(s[2]), rng: s[0] }); });
+    const lons = ORDER.map((k) => P[k].lon), lats = ORDER.map((k) => P[k].lat);
+    let dmax = 0;
+    ORDER.forEach((a) => ORDER.forEach((b) => { dmax = Math.max(dmax, haversine(P[a], P[b])); }));
+    arr.push({ lon: (Math.min(...lons) + Math.max(...lons)) / 2, lat: (Math.min(...lats) + Math.max(...lats)) / 2, hgt: 0, hd: rad(15), pit: rad(-48), rng: Math.max(2800, dmax * 1000 * 1.4) });
+    return arr;
+  }
+  function stateAt(p) {
+    let i = 0;
+    while (i < STOPS.length - 1 && p >= STOPS[i + 1][1]) i++;
+    if (i >= STOPS.length - 1) return shots[shots.length - 1];
+    const a = STOPS[i][1], b = STOPS[i + 1][1], hold = 0.035;
+    const t = clamp01((p - a - hold) / (b - a - 2 * hold)), e = t * t * t * (t * (t * 6 - 15) + 10);
+    const A = shots[i], B = shots[i + 1];
+    const lift = 1 + (i === 0 ? 0 : 1.7) * Math.sin(Math.PI * e); // pull up between places, like a camera crane
+    return { lon: lerp(A.lon, B.lon, e), lat: lerp(A.lat, B.lat, e), hgt: lerp(A.hgt, B.hgt, e), hd: angLerp(A.hd, B.hd, e), pit: lerp(A.pit, B.pit, e) - 0.28 * Math.sin(Math.PI * e), rng: Math.exp(lerp(Math.log(A.rng), Math.log(B.rng), e)) * lift };
+  }
+  const nearestStop = (p) => STOPS.reduce((best, s) => (Math.abs(s[1] - p) < Math.abs(best[1] - p) ? s : best))[0];
+  function applyState(st, t) {
+    const drift = reduce ? 0 : 0.06 * Math.sin(t / 3500);
+    const c = C.Cartesian3.fromDegrees(st.lon, st.lat, st.hgt);
+    viewer.camera.lookAtTransform(C.Transforms.eastNorthUpToFixedFrame(c), new C.HeadingPitchRange(st.hd + drift, st.pit, st.rng));
+  }
+
+  if (wheelMode) {
+    stage.addEventListener('wheel', (e) => {
+      if (!ready || explore) return;
+      let d = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+      if (Math.abs(d) < 1) return;
+      // at the very start or end of the journey, let the page scroll on as normal
+      if ((d < 0 && W.wp <= 0.0005) || (d > 0 && W.wp >= 0.9995)) return;
+      e.preventDefault();
+      if (playing) stopPlay();
+      if (snapTween) snapTween.kill();
+      clearTimeout(snapTimer);
+      W.wp = clamp01(W.wp + Math.max(-140, Math.min(140, d)) / 2400);
+      $('jm-scrollhint').classList.add('is-gone');
+      // when the wheel pauses, settle on the nearest place
+      snapTimer = setTimeout(() => {
+        const near = STOPS.reduce((b, st) => (Math.abs(st[1] - W.wp) < Math.abs(b[1] - W.wp) ? st : b));
+        snapTween = gsap.to(W, { wp: near[1], duration: reduce ? 0 : 1.1, ease: 'power2.out' });
+      }, 650);
+    }, { passive: false });
   }
 
   function setExplore(on) {
@@ -198,10 +277,14 @@ export function initJourneyMap() {
     stage.classList.toggle('is-explore', on);
     $('jm-explore').textContent = on ? 'Back to the story' : 'Explore the map';
     if (!ready) return;
-    const c = viewer.scene.screenSpaceCameraController;
-    c.enableInputs = on;
-    if (on) { orbit = null; viewer.camera.lookAtTransform(C.Matrix4.IDENTITY); }
-    else if (cur) { const id = cur; cur = null; select(id, { fromPlay: !!playing }); }
+    if (playing) stopPlay();
+    const sc = viewer.scene.screenSpaceCameraController;
+    sc.enableInputs = on;
+    if (on) { driving = false; viewer.camera.lookAtTransform(C.Matrix4.IDENTITY); }
+    else {
+      const st = stateAt(disp), c = C.Cartesian3.fromDegrees(st.lon, st.lat, st.hgt);
+      viewer.camera.flyToBoundingSphere(new C.BoundingSphere(c, 1), { offset: new C.HeadingPitchRange(st.hd, st.pit, st.rng), duration: reduce ? 0 : 1.6, complete: () => { driving = true; } });
+    }
   }
   $('jm-explore').addEventListener('click', () => setExplore(!explore));
   addEventListener('keydown', (e) => { if (e.key === 'Escape' && explore) setExplore(false); });
@@ -209,6 +292,7 @@ export function initJourneyMap() {
   async function boot() {
     try {
       C = await loadCesium();
+      shots = buildShots();
       const cred = document.createElement('div'); cred.className = 'jm__credit'; stage.appendChild(cred);
       viewer = new C.Viewer($('jm-globe'), {
         baseLayer: false, baseLayerPicker: false, geocoder: false, homeButton: false, sceneModePicker: false, navigationHelpButton: false,
@@ -243,9 +327,11 @@ export function initJourneyMap() {
         } catch (e) { console.warn('3D terrain/buildings unavailable', e); }
       } else esri();
 
-      // ground heights for the three markers
+      // ground heights for the three markers (and for the camera to look at)
       const carts = ORDER.map((k) => C.Cartographic.fromDegrees(J.places[k].lon, J.places[k].lat));
       if (terrain) { try { await C.sampleTerrainMostDetailed(terrain, carts); } catch (e) { /* flat */ } }
+      ORDER.forEach((k, i) => { shots[i + 1].hgt = carts[i].height || 0; });
+      shots[4].hgt = (shots[1].hgt + shots[2].hgt + shots[3].hgt) / 3;
       const css = (v, f) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || f;
       const colA = C.Color.fromCssColorString(css('--lg-b', '#38a8ff')), colB = C.Color.fromCssColorString(css('--lg-c', '#67e8f9'));
       const BEACON = 240;
@@ -267,16 +353,14 @@ export function initJourneyMap() {
         }
         return pts;
       };
-      const routes = [['home', 'school'], ['school', 'uni']].map(([A, B], k) => {
-        const pts = arc(A, B), st = { a: 0, k };
+      const routes = [['home', 'school'], ['school', 'uni']].map(([A, B]) => {
+        const pts = arc(A, B), st = { a: 0 };
         viewer.entities.add({ polyline: { positions: pts, width: 9, material: new C.PolylineGlowMaterialProperty({ glowPower: 0.28, color: new C.CallbackProperty(() => colB.withAlpha(0.95 * st.a), false) }) } });
         const packet = (off) => viewer.entities.add({ position: new C.CallbackProperty(() => pts[Math.floor((((performance.now() / 3200 + off) % 1) * (pts.length - 1)))], false), point: { pixelSize: 11, color: new C.CallbackProperty(() => C.Color.WHITE.withAlpha(st.a), false), outlineColor: new C.CallbackProperty(() => colB.withAlpha(0.8 * st.a), false), outlineWidth: 6, disableDepthTestDistance: Number.POSITIVE_INFINITY } });
         packet(0); packet(0.5);
         return st;
       });
-      const showRoutes = (id) => routes.forEach((r, i) => gsap.to(r, { a: id === 'route' || (id === 'uni') || (id === 'school' && i === 0) ? 1 : 0, duration: reduce ? 0 : 1.4, ease: 'power2.out' }));
-      const _select = select;
-      select = (id, o) => { showRoutes(id); _select(id, o); }; // eslint-disable-line no-func-assign
+      showRoutes = (id) => routes.forEach((r, i) => gsap.to(r, { a: id === 'route' || id === 'uni' || (id === 'school' && i === 0) ? 1 : 0, duration: reduce ? 0 : 1.4, ease: 'power2.out' }));
 
       // DOM pins follow the 3D markers
       const win = new C.Cartesian2();
@@ -293,30 +377,42 @@ export function initJourneyMap() {
         $('jm-lon').textContent = C.Math.toDegrees(c.longitude).toFixed(4);
         $('jm-alt').textContent = c.height > 2e5 ? Math.round(c.height / 1000).toLocaleString() + ' km' : Math.round(c.height) + ' m';
       });
-      // slow cinematic orbit around the selected place
+
+      // every frame: read the scroll position and glide the camera along the path
       viewer.clock.onTick.addEventListener(() => {
-        if (!orbit || explore || flying) return;
-        const dt = (performance.now() - orbit.t0) / 1000;
-        viewer.camera.lookAtTransform(C.Transforms.eastNorthUpToFixedFrame(orbit.center), new C.HeadingPitchRange(orbit.h + dt * 0.045, orbit.pitch, orbit.range));
+        const now = performance.now(), dt = Math.min(0.1, (now - lastT) / 1000);
+        lastT = now;
+        const target = progress();
+        prog.style.width = (target * 100).toFixed(1) + '%';
+        if (!wheelMode) $('jm-scrollhint').classList.toggle('is-gone', target > 0.02);
+        if (explore || !driving) return;
+        disp = reduce ? target : disp + (target - disp) * (1 - Math.exp(-dt * 4.2));
+        if (Math.abs(target - disp) < 1e-5) disp = target;
+        applyState(stateAt(disp), now);
+        setUI(nearestStop(disp));
       });
       // save battery when the map is off screen
       new IntersectionObserver((es) => { viewer.useDefaultRenderLoop = es[0].isIntersecting; }, { threshold: 0 }).observe(stage);
 
       ready = true;
       $('jm-load').classList.add('is-gone');
-      // cinematic intro: from space, down to Mauritius
+      // cinematic intro: from space, down to Mauritius, then scrolling takes over
+      disp = progress();
+      const st0 = stateAt(disp), c0 = C.Cartesian3.fromDegrees(st0.lon, st0.lat, st0.hgt);
       viewer.camera.setView({ destination: C.Cartesian3.fromDegrees(57.5, -20.2, 2.4e7), orientation: { heading: 0, pitch: C.Math.toRadians(-90), roll: 0 } });
-      cur = null;
-      select('overview');
+      cur = null; setUI(nearestStop(disp));
+      viewer.camera.flyToBoundingSphere(new C.BoundingSphere(c0, 1), { offset: new C.HeadingPitchRange(st0.hd, st0.pit, st0.rng), duration: reduce ? 0 : 5, easingFunction: C.EasingFunction.CUBIC_IN_OUT, complete: () => { driving = true; }, cancel: () => { driving = true; } });
     } catch (e) {
       console.warn('3D map unavailable:', e);
       $('jm-load-t').textContent = '3D map unavailable here. The story below still works.';
       $('jm-load').classList.add('is-fail');
+      root.classList.add('jm--flat');
       Object.values(pins).forEach((el) => (el.style.display = 'none'));
-      $('jm-explore').style.display = 'none';
+      $('jm-explore').style.display = 'none'; $('jm-scrollhint').style.display = 'none';
     }
   }
 
+  if (wheelMode) $('jm-scrolltxt').textContent = 'Put your cursor here and scroll';
   mark('overview'); showPanel('overview'); cur = 'overview';
   let started = false;
   new IntersectionObserver((es, io) => {

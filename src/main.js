@@ -11,6 +11,7 @@ import { initInfo } from './info.js';
 import { initHeroHover } from './hero-hover.js';
 import { initPhotoFx } from './photo-fx.js';
 import { initJourneyMap } from './map.js';
+import { initKeyboard } from './keyboard/index.js';
 import { initAtmosphere } from './atmosphere.js';
 import { applyAccent, savedAccent } from './accents.js';
 import { initAccent } from './accent.js';
@@ -26,6 +27,7 @@ async function start() {
   render();
   initJourneyMap();
 
+  const kb = await initKeyboard().catch((e) => { console.warn('keyboard unavailable', e); return null; });
   const canvas = document.getElementById('scene');
   const scene = await createScene(canvas);
   if (!scene) document.documentElement.classList.add('no-webgl');
@@ -47,6 +49,7 @@ async function start() {
   document.body.style.overflow = 'hidden';
   await playIntro(scene ? scene.ready : Promise.resolve());
   document.body.style.overflow = '';
+  if (kb) kb.show();
 
   // If the page opened part-way down (#hash link or a reload that restores scroll), the scroll-triggered
   // reveals for everything already passed would never fire. Show those elements straight away.
