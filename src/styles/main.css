@@ -919,3 +919,12 @@ a.contact__item:hover { border-color: var(--blue); transform: translateX(4px); }
 .jm--wheel .jm__nav .jm-chip[data-id] { display: none; }
 @media (max-width: 1000px) { .jm-idx { display: none; } }
 
+
+/* ---- Photo plates (src/photos.js) ---- */
+.plates { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.plate { position: absolute; inset: -4%; opacity: 0; background-size: cover; background-position: center; filter: blur(1.5px) saturate(0.9) contrast(1.05); mix-blend-mode: screen; will-change: opacity, transform; }
+:root[data-theme='light'] .plate { mix-blend-mode: multiply; }
+.plates::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 45%, transparent 35%, rgba(3, 5, 10, 0.6) 100%); }
+:root[data-theme='light'] .plates::after { display: none; }
+@keyframes plate-drift { from { transform: scale(1.04) translate3d(-1.2%, 0, 0); } to { transform: scale(1.12) translate3d(1.2%, -0.8%, 0); } }
+.plate--drift { animation: plate-drift 36s ease-in-out infinite alternate; }

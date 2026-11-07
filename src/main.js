@@ -12,7 +12,6 @@ import { initHeroHover } from './hero-hover.js';
 import { initPhotoFx } from './photo-fx.js';
 import { initJourneyMap } from './map.js';
 import { initAtmosphere } from './atmosphere.js';
-import { initStadium } from './stadium/stadium.js';
 import { applyAccent, savedAccent } from './accents.js';
 import { initAccent } from './accent.js';
 import { logoSvg, initLogoHover } from './logo.js';
@@ -27,7 +26,6 @@ async function start() {
   render();
   initJourneyMap();
 
-  try { initStadium(); } catch (e) { console.warn('stadium unavailable', e); delete document.documentElement.dataset.ocean; }
   const canvas = document.getElementById('scene');
   const scene = await createScene(canvas);
   if (!scene) document.documentElement.classList.add('no-webgl');
