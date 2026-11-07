@@ -312,14 +312,15 @@ export function initJourneyMap() {
       sc.screenSpaceCameraController.minimumZoomDistance = 120;
       sc.screenSpaceCameraController.maximumZoomDistance = 3.5e7;
 
-      const esri = () => viewer.imageryLayers.addImageryProvider(new C.UrlTemplateImageryProvider({ url: ESRI, maximumLevel: 18, credit: new C.Credit('Imagery © Esri, Maxar, Earthstar Geographics') }));
+      const grade = (l) => { l.brightness = 0.74; l.contrast = 1.12; l.saturation = 0.72; l.gamma = 1.05; return l; }; // calmer, darker imagery so the text and route read clearly
+      const esri = () => grade(viewer.imageryLayers.addImageryProvider(new C.UrlTemplateImageryProvider({ url: ESRI, maximumLevel: 18, credit: new C.Credit('Imagery © Esri, Maxar, Earthstar Geographics') })));
       let terrain = null;
       if (J.cesiumToken) {
         C.Ion.defaultAccessToken = J.cesiumToken;
         let fell = false;
         const layer = C.ImageryLayer.fromProviderAsync(C.createWorldImageryAsync({ style: C.IonWorldImageryStyle.AERIAL }));
         layer.errorEvent.addEventListener(() => { if (!fell) { fell = true; viewer.imageryLayers.remove(layer); esri(); } });
-        viewer.imageryLayers.add(layer);
+        grade(layer); viewer.imageryLayers.add(layer);
         try {
           terrain = await C.createWorldTerrainAsync({ requestVertexNormals: true });
           viewer.terrainProvider = terrain;
@@ -339,12 +340,12 @@ export function initJourneyMap() {
         const p = J.places[k], h = carts[i].height || 0;
         const ground = C.Cartesian3.fromDegrees(p.lon, p.lat, h), top = C.Cartesian3.fromDegrees(p.lon, p.lat, h + BEACON);
         place3[k] = { ground, top, h, lat: p.lat, lon: p.lon };
-        viewer.entities.add({ polyline: { positions: [ground, top], width: 6, material: new C.PolylineGlowMaterialProperty({ glowPower: 0.3, color: colB }) } });
-        viewer.entities.add({ position: top, ellipsoid: { radii: new C.Cartesian3(34, 34, 34), material: colB.withAlpha(0.95), outline: true, outlineColor: C.Color.WHITE.withAlpha(0.6), slicePartitions: 12, stackPartitions: 12 } });
+        viewer.entities.add({ polyline: { positions: [ground, top], width: 1.5, material: colB.withAlpha(0.85) } });
+        viewer.entities.add({ position: top, ellipsoid: { radii: new C.Cartesian3(13, 13, 13), material: colB.withAlpha(0.95), outline: true, outlineColor: C.Color.WHITE.withAlpha(0.7), slicePartitions: 12, stackPartitions: 12 } });
         viewer.entities.add({ position: C.Cartesian3.fromDegrees(p.lon, p.lat, h + 4), ellipse: { semiMajorAxis: 90, semiMinorAxis: 90, height: h + 4, fill: false, outline: true, outlineColor: colA.withAlpha(0.9), outlineWidth: 2 } });
       });
 
-      // glowing arcs with travelling packets
+      // one thin route line between the places
       const arc = (A, B) => {
         const pts = [], n = 64, d = haversine(J.places[A], J.places[B]) * 1000, up = Math.min(900, d * 0.14);
         for (let t = 0; t <= n; t++) {
@@ -355,9 +356,7 @@ export function initJourneyMap() {
       };
       const routes = [['home', 'school'], ['school', 'uni']].map(([A, B]) => {
         const pts = arc(A, B), st = { a: 0 };
-        viewer.entities.add({ polyline: { positions: pts, width: 9, material: new C.PolylineGlowMaterialProperty({ glowPower: 0.28, color: new C.CallbackProperty(() => colB.withAlpha(0.95 * st.a), false) }) } });
-        const packet = (off) => viewer.entities.add({ position: new C.CallbackProperty(() => pts[Math.floor((((performance.now() / 3200 + off) % 1) * (pts.length - 1)))], false), point: { pixelSize: 11, color: new C.CallbackProperty(() => C.Color.WHITE.withAlpha(st.a), false), outlineColor: new C.CallbackProperty(() => colB.withAlpha(0.8 * st.a), false), outlineWidth: 6, disableDepthTestDistance: Number.POSITIVE_INFINITY } });
-        packet(0); packet(0.5);
+        viewer.entities.add({ polyline: { positions: pts, width: 2.2, material: new C.ColorMaterialProperty(new C.CallbackProperty(() => colB.withAlpha(0.9 * st.a), false)) } });
         return st;
       });
       showRoutes = (id) => routes.forEach((r, i) => gsap.to(r, { a: id === 'route' || id === 'uni' || (id === 'school' && i === 0) ? 1 : 0, duration: reduce ? 0 : 1.4, ease: 'power2.out' }));

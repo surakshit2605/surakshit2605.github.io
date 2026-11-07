@@ -4,6 +4,7 @@ import { gsap } from 'gsap';
 import { techIcons } from './techIcons.js';
 
 import { ACCENTS } from '../accents.js';
+import { createStation } from './station.js';
 import { createWorld } from './world.js';
 
 const C = { navy: 0x0a1330, blue: 0x2f7bff, sky: 0x8fc8ff };
@@ -66,7 +67,7 @@ export async function createScene(canvas) {
   renderer.setClearColor(0x000000, 0);
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 260);
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 420);
   camera.position.set(0, 0, 9);
 
   const ambient = new THREE.AmbientLight(0x6f86b8, 0.6);
@@ -81,7 +82,9 @@ export async function createScene(canvas) {
 
   const world = createWorld({ lite });
   scene.add(world.root);
-  world.root.visible = !document.documentElement.dataset.ocean; // the generic tech 'stations' give way to the ocean world
+  const hull = createStation({ lite });
+  scene.add(hull.root);
+  world.root.visible = true;
 
   // ---- The core -------------------------------------------------------
   const core = new THREE.Group();
@@ -231,7 +234,7 @@ export async function createScene(canvas) {
     new THREE.PointsMaterial({ color: C.sky, size: 0.035, transparent: true, opacity: 0.5, depthWrite: false })
   );
   scene.add(particles);
-  particles.visible = !document.documentElement.dataset.ocean; // the ocean has its own marine snow
+  particles.visible = true;
 
   // ---- Optional Blender model ----------------------------------------
   // If public/models/core.glb exists it replaces the procedural centre.
@@ -340,6 +343,7 @@ export async function createScene(canvas) {
       if (old) old.dispose();
     });
     world.setTheme(th);
+    hull.setTheme(!!th.light);
     if (reduced) renderer.render(scene, camera);
   }
 
@@ -353,17 +357,19 @@ export async function createScene(canvas) {
     const c = world.stations[k.st].center;
     // Phones: text covers the width, so centre the object, pull back and raise it a little.
     const side = narrow ? 0 : k.side;
-    const dist = narrow ? k.dist * 1.3 : k.dist;
-    const ty = c.y + (narrow ? -0.9 : k.ty || 0);
+    const strip = narrow && ['skills', 'journey', 'projects', 'achievements', 'background', 'education'].includes(name); // phones: these titles sit under the object, so park it in the strip above
+    const dist = narrow ? k.dist * (strip ? 1.9 : 1.3) : k.dist;
+    const ty = c.y + (strip ? -0.3 * dist : narrow ? -0.9 : k.ty || 0);
     const tx = c.x - side;
     return { px: tx + Math.sin(k.az) * dist, py: ty + k.h, pz: c.z + Math.cos(k.az) * dist, tx, ty, tz: c.z };
   }
   function setCore() {
-    core.visible = !document.documentElement.dataset.ocean && coreSt.fade > 0.25;
+    core.visible = coreSt.fade > 0.25;
     orbit.visible = !narrow && core.visible;
   }
   function apply(name, instant) {
     const k = SHOTS[name];
+    hull.setSection(name);
     const pose = shotPose(name);
     const d = instant || reduced ? 0 : 1;
     const dx = pose.px - cam.px, dy = pose.py - cam.py, dz = pose.pz - cam.pz;
@@ -459,6 +465,7 @@ export async function createScene(canvas) {
       const fov = 45 + cam.kick;
       if (Math.abs(camera.fov - fov) > 0.01) { camera.fov = fov; camera.updateProjectionMatrix(); }
       world.update(dt, t, camera);
+      hull.update(dt, t, camera);
 
       hoverIcons();
       renderer.render(scene, camera);
