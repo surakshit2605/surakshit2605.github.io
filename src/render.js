@@ -16,7 +16,7 @@ import {
 import { site } from './data/site.js';
 import { icon } from './icons.js';
 import { mapMarkup } from './map.js';
-import { journeyMap, studio } from './data/content.js';
+import { journeyMap } from './data/content.js';
 
 const esc = (s = '') =>
   String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -43,7 +43,6 @@ export const SECTIONS = [
   { id: 'map', label: 'Journey Map' },
   { id: 'skills', label: 'Skills' },
   { id: 'journey', label: 'Journey' },
-  { id: 'play', label: 'Studio' },
   { id: 'projects', label: 'Projects' },
   { id: 'achievements', label: 'Achievements' },
   { id: 'contact', label: 'Contact' },
@@ -80,7 +79,6 @@ function hero() {
       <div class="hero__cta" data-hero>
         <a class="btn btn--primary" href="#projects" data-nav>View projects</a>
         <a class="btn" href="#contact" data-nav>Get in touch</a>
-        <a class="btn" href="#play" data-nav>Play the keyboard</a>
         ${cvLink('btn')}
       </div>
     </div>
@@ -301,23 +299,6 @@ function backgroundSection() {
       ${head(nextNo(), 'Background', background.title).replace('class="title"', 'class="title" id="bg-t"')}
       <p class="body" data-reveal>${esc(background.intro)}</p>
       <div class="bg-line">${chapters}</div>
-    </div>
-  </section>`;
-}
-
-function playSection() {
-  const hints = studio.hints.map(([k, v]) => `<li data-reveal><b>${esc(k)}</b><span>${esc(v)}</span></li>`).join('');
-  return `
-  <section class="section play" id="play" data-scene="play" aria-labelledby="play-t">
-    <div class="wrap">
-      <div class="section__head">
-        <p class="label" data-reveal>${nextNo()} / ${esc(studio.label)}</p>
-        <h2 class="title" id="play-t" data-reveal>${esc(studio.title)}</h2>
-      </div>
-      <p class="body play__intro" data-reveal>${esc(studio.intro)}</p>
-      <div class="play__stage" id="kb-stage" aria-hidden="true"></div>
-      <ul class="play__hints">${hints}</ul>
-      <p class="play__credit" data-reveal>${esc(studio.credit)}</p>
     </div>
   </section>`;
 }
@@ -570,7 +551,6 @@ export function render() {
     mapSection() +
     skillsSection() +
     journeySection() +
-    playSection() +
     projectsSection() +
     achievementsSection() +
     contactSection();

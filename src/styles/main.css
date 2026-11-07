@@ -89,6 +89,10 @@ img { max-width: 100%; display: block; }
 .progress { position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 60; }
 .progress i { display: block; height: 100%; background: var(--blue); transform: scaleX(0); transform-origin: left; }
 
+/* ---------- The Cable: ocean background (src/ocean) ---------- */
+#ocean { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; display: block; }
+html[data-ocean] .atmos { display: none; }
+
 /* ---------- Cinematic atmosphere (behind the 3D scene) ---------- */
 .atmos { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; background: radial-gradient(ellipse at 50% 0%, rgba(var(--navy-rgb), 0.9), rgba(var(--bg-rgb), 1) 65%); }
 .atmos i { position: absolute; display: block; will-change: transform, opacity; }
@@ -915,42 +919,3 @@ a.contact__item:hover { border-color: var(--blue); transform: translateX(4px); }
 .jm--wheel .jm__nav .jm-chip[data-id] { display: none; }
 @media (max-width: 1000px) { .jm-idx { display: none; } }
 
-/* ---- Playable keyboard (src/keyboard) ---- */
-#kb-canvas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; display: block; opacity: 0; }
-.no-webgl #kb-canvas { display: none; }
-.kb-lock { position: fixed; z-index: 3; left: 0; top: 0; width: 0; height: 0; pointer-events: none; touch-action: none; }
-html.kb-hover, html.kb-hover * { cursor: pointer !important; }
-html.kb-grab, html.kb-grab * { cursor: grab !important; }
-html.kb-playing, html.kb-playing * { user-select: none !important; -webkit-user-select: none !important; }
-.kbhud {
-  position: fixed; right: 18px; bottom: 18px; z-index: 55; display: flex; align-items: center; gap: 10px;
-  padding: 8px 10px 8px 14px; border-radius: 999px; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase;
-  color: var(--text); background: rgba(var(--card-rgb), 0.72); border: 1px solid var(--line);
-  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 14px 40px -18px rgba(0, 0, 0, 0.6);
-  transition: opacity 0.5s, transform 0.5s;
-}
-.kbhud.is-away { opacity: 0; pointer-events: none; transform: translateY(14px); }
-.kbhud__note { display: inline-flex; align-items: center; gap: 8px; min-width: 96px; color: var(--muted); }
-.kbhud__note i { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); opacity: 0.5; transition: background 0.15s, box-shadow 0.15s, opacity 0.15s; }
-.kbhud__note.is-on { color: var(--text); }
-.kbhud__note.is-on i { background: rgb(var(--sky-rgb)); opacity: 1; box-shadow: 0 0 10px 2px rgba(var(--sky-rgb), 0.8); }
-.kbhud__btn { display: inline-flex; align-items: center; justify-content: center; height: 32px; min-width: 32px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--text); font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; text-decoration: none; transition: background 0.2s, border-color 0.2s; }
-.kbhud__btn:hover { background: rgba(var(--sky-rgb), 0.14); border-color: rgba(var(--sky-rgb), 0.5); }
-.kbhud__btn[aria-pressed='false'] { color: var(--muted); }
-.kbhud input[type='range'] { width: 84px; accent-color: rgb(var(--sky-rgb)); cursor: pointer; }
-@media (max-width: 700px) {
-  .kbhud { left: 10px; right: 10px; bottom: 10px; justify-content: space-between; padding: 6px 8px 6px 12px; gap: 6px; }
-  .kbhud__note { min-width: 0; flex: 1; }
-  .kbhud input[type='range'] { width: 60px; }
-  .kbhud__txt:not(#kb-go) { display: none; }
-}
-
-.play { min-height: 190vh; align-items: flex-start; }
-.play .wrap { width: 100%; }
-.play__intro { max-width: 52ch; }
-.play__stage { height: clamp(300px, 56vh, 620px); margin: 28px 0; }
-.play__hints { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px 28px; max-width: 1100px; }
-.play__hints li { display: grid; gap: 4px; font-size: 0.9rem; color: var(--text-2); padding-left: 14px; border-left: 2px solid rgba(var(--sky-rgb), 0.5); }
-.play__hints b { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text); font-weight: 600; }
-.play__credit { margin-top: 28px; font-size: 0.74rem; color: var(--muted); max-width: 70ch; }
-@media (max-width: 700px) { .play { min-height: 170vh; } .play__stage { height: 38vh; } }

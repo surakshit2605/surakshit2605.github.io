@@ -44,7 +44,6 @@ const SHOTS = {
   background: { st: 'code', side: 4.6, dist: 12.5, h: 0.3, az: -0.12 },
   education: { st: 'code', side: 3, dist: 9.5, h: -0.2, az: 0.32 },
   skills: { st: 'servers', side: 0, dist: 19, h: 0.8, az: 0, ty: -2.4 }, // full-width cards: scene sits in the strip above them
-  play: { st: 'network', side: 0, dist: 16, h: 0.4, az: 0, ty: -2.2 },
   journey: { st: 'network', side: 3.4, dist: 15, h: 0.4, az: 0.3, ty: -2.2 },
   projects: { st: 'database', side: 3.2, dist: 16, h: 0.9, az: -0.2, ty: -2.4 },
   achievements: { st: 'crypto', side: 3.2, dist: 11.5, h: 0, az: 0.1 },
@@ -82,6 +81,7 @@ export async function createScene(canvas) {
 
   const world = createWorld({ lite });
   scene.add(world.root);
+  world.root.visible = !document.documentElement.dataset.ocean; // the generic tech 'stations' give way to the ocean world
 
   // ---- The core -------------------------------------------------------
   const core = new THREE.Group();
@@ -231,6 +231,7 @@ export async function createScene(canvas) {
     new THREE.PointsMaterial({ color: C.sky, size: 0.035, transparent: true, opacity: 0.5, depthWrite: false })
   );
   scene.add(particles);
+  particles.visible = !document.documentElement.dataset.ocean; // the ocean has its own marine snow
 
   // ---- Optional Blender model ----------------------------------------
   // If public/models/core.glb exists it replaces the procedural centre.
@@ -358,9 +359,7 @@ export async function createScene(canvas) {
     return { px: tx + Math.sin(k.az) * dist, py: ty + k.h, pz: c.z + Math.cos(k.az) * dist, tx, ty, tz: c.z };
   }
   function setCore() {
-    // the playable keyboard (src/keyboard) replaces the Secure Core as the hero object
-    const kbOn = document.documentElement.dataset.kb === '1';
-    core.visible = !kbOn && coreSt.fade > 0.25;
+    core.visible = !document.documentElement.dataset.ocean && coreSt.fade > 0.25;
     orbit.visible = !narrow && core.visible;
   }
   function apply(name, instant) {

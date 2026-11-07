@@ -651,16 +651,3 @@ export const journeyMap = {
   },
 };
 
-// The playable keyboard section. Edit the text freely.
-export const studio = {
-  label: 'Studio',
-  title: 'Play the keys',
-  intro: 'Piano is one of my hobbies, so this page has an instrument on it. It is a 3D arranger keyboard in the style of the Yamaha PSR-S970, built for this site. Click or touch the keys, drag the knobs, press the buttons.',
-  hints: [
-    ['Mouse / touch', 'Click, hold or slide across the keys. Touch supports chords.'],
-    ['Computer keyboard', 'Z X C V … (low row) and Q W E R … (upper row). [ and ] shift the octave.'],
-    ['Panel', 'Voices, styles, START / STOP, DEMO, METRO, SUSTAIN, REVERB, TRANS. Drag the knobs, the volume slider and the pitch wheel.'],
-    ['Look around', 'Drag the black body to turn the keyboard. RESET VIEW brings it back.'],
-  ],
-  credit: 'Piano samples: Salamander Grand Piano by Alexander Holm (CC BY 3.0). Independent 3D recreation for a portfolio; not affiliated with or endorsed by Yamaha.',
-};
