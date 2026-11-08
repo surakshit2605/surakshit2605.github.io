@@ -894,7 +894,12 @@ a.contact__item:hover { border-color: var(--blue); transform: translateX(4px); }
   .jm__stage { flex: 1 1 0; min-height: 0; height: auto; border-radius: 16px; }
   .jm__panel { position: static; flex: 0 0 auto; width: auto; max-height: 40%; margin: 0; padding: 14px 16px; gap: 6px; border-radius: 16px; background: rgba(9, 17, 38, 0.96); -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; overscroll-behavior: contain; }
   .jm__panel h3 { font-size: 1.1rem; } .jm__panel p { font-size: 0.84rem; line-height: 1.5; }
-  .jm-p__photo, .jm-p__dl, .jm-p__cta, .jm-p__note { display: none; }
+  .jm-p__dl, .jm-p__cta, .jm-p__note { display: none; }
+  /* the place photo stays on phones as a small thumbnail beside the title */
+  .jm__panel { position: relative; left: auto; top: auto; margin-top: 0; }
+  .jm-p__photo { position: absolute; top: 14px; right: 14px; width: 92px; height: 92px; margin: 0; border-radius: 12px; }
+  .jm__panel:has(.jm-p__photo) > :is(.jm-p__tag, h3, .jm-p__place, .jm-p__years) { margin-right: 106px; }
+  .jm__panel:has(.jm-p__photo) { min-height: 124px; }
   .jm-p__facts li { font-size: 0.82rem; }
   .jm__hud--tl, .jm__hint, .jm__scroll { display: none; }
   .jm__hud--tr { top: 20px; left: 18px; right: auto; }
