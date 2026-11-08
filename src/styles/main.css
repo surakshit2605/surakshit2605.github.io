@@ -235,7 +235,14 @@ img { max-width: 100%; display: block; }
 
 @media (max-width: 860px) {
   .menu__inner { grid-template-columns: 1fr; gap: 0; align-content: center; padding-bottom: 70px; }
-  .menu__side { display: none; }
+  /* phone: the menu scrolls, and the contact / display / links panel sits under the list */
+  .menu { overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+  .menu__bg, .menu__glow { position: fixed; }
+  .menu__inner { height: auto; min-height: 100%; align-content: start; padding-bottom: 40px; }
+  .menu__side { border-left: 0; padding-left: 0; border-top: 1px solid var(--line); margin-top: 22px; padding-top: 24px; gap: 24px; align-content: start; }
+  .menu::after { content: ''; position: fixed; left: 0; right: 0; top: 0; height: calc(var(--nav-h) + 14px); z-index: 2; pointer-events: none; background: linear-gradient(180deg, rgb(var(--bg-rgb)) 72%, rgba(var(--bg-rgb), 0)); }
+  .menu .menu__inner { position: relative; z-index: 1; padding-top: calc(var(--nav-h) + 16px); }
+  .menu__foot { display: none; }
   .menu__line { font-size: clamp(1.6rem, 6.2vh, 2.6rem); }
   .menu__list a { gap: 14px; }
 }
