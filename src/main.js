@@ -18,6 +18,7 @@ import { initAccent } from './accent.js';
 import { initSound } from './sound.js';
 import { initTerminal } from './terminal.js';
 import { initQuality } from './quality.js';
+import { initSky } from './sky-panel.js';
 import { logoSvg, initLogoHover } from './logo.js';
 
 async function start() {
@@ -45,6 +46,7 @@ async function start() {
   initSound();
   initTerminal();
   initQuality();
+  initSky();
   initContactForm();
   initLightbox();
   initScroll(scene);

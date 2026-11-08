@@ -5,6 +5,7 @@
 import { now, profile, about, education, skills, projects, contact } from './data/content.js';
 
 import { getQuality, setQuality } from './quality.js';
+import { sunAt, sunTimes, fmtHM, fmtLen } from './sky.js';
 
 const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -35,7 +36,7 @@ export function initTerminal() {
     help() {
       line('Commands', 'term__h');
       [['whoami', 'who I am'], ['about', 'a short intro'], ['education', 'degree and dates'], ['skills', 'skills by category'], ['projects', 'university projects'], ['contact', 'email and links'],
-        ['now', 'what I am working on'], ['ls', 'list the rooms'], ['quality auto|low|high', '3D detail (reloads the page)'], ['goto <room>', 'fly to a room, e.g. goto projects'], ['theme dark|light', 'switch theme'], ['sound on|off', 'station sound'], ['clear', 'clear the screen'], ['exit', 'close (or press Esc)']]
+        ['now', 'what I am working on'], ['sky', 'sun times over Port Louis'], ['ls', 'list the rooms'], ['quality auto|low|high', '3D detail (reloads the page)'], ['goto <room>', 'fly to a room, e.g. goto projects'], ['theme dark|light', 'switch theme'], ['sound on|off', 'station sound'], ['clear', 'clear the screen'], ['exit', 'close (or press Esc)']]
         .forEach(([c, d]) => line(`  ${c.padEnd(18, ' ')}${d}`));
     },
     whoami() { line(profile.name); line(profile.role); if (profile.location) line(profile.location); },
@@ -56,6 +57,12 @@ export function initTerminal() {
       if (!['auto', 'low', 'high'].includes(q)) { line(`quality: ${getQuality()}   (usage: quality auto|low|high)`); return; }
       if (q === getQuality()) { line(`quality is already ${q}`); return; }
       line(`quality: ${q}. Reloading…`); setTimeout(() => setQuality(q), 400);
+    },
+    sky() {
+      const t = sunTimes(Date.now()), s = sunAt(Date.now());
+      line('Port Louis, 20.2°S 57.5°E (calculated, not a live feed)');
+      if (t) line(`sunrise ${fmtHM(t.rise)}   sunset ${fmtHM(t.set)}   day ${fmtLen(t.length)}`);
+      line(`sun height now: ${s.alt.toFixed(0)}°`);
     },
     ls() { line(sections().join('  ')); },
     goto(arg) {

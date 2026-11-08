@@ -214,6 +214,32 @@ function profileSection() {
           <p class="sr" id="ck-sr"></p>
         </div>
 
+        <div class="dossier__sky" id="sky" data-reveal>
+          <p class="eyebrow">Live sky <span class="sky__where">Port Louis · 20.2°S 57.5°E</span><span class="live"><i></i>Live</span></p>
+          <div class="sky">
+            <div class="sky__sun">
+              <svg class="sky__arc" viewBox="0 0 320 140" role="img" aria-label="Where the Sun is on its path across the sky today">
+                <path class="sky__path" d="M 24 112 A 136 96 0 0 1 296 112" />
+                <line class="sky__horizon" x1="6" y1="112" x2="314" y2="112" />
+                <circle id="sky-sun-halo" class="sky__sunhalo" r="22" cx="160" cy="112" />
+                <circle id="sky-sun" class="sky__sundot" r="8" cx="160" cy="112" />
+              </svg>
+              <dl class="sky__facts">
+                <div><dt>Sunrise</dt><dd id="sky-rise">--:--</dd></div>
+                <div><dt>Sunset</dt><dd id="sky-set">--:--</dd></div>
+                <div><dt>Day length</dt><dd id="sky-len">--</dd></div>
+                <div><dt>Sun height</dt><dd><span id="sky-alt">--</span> <small id="sky-state"></small></dd></div>
+              </dl>
+            </div>
+            <div class="sky__cross">
+              <svg id="sky-crux" class="sky__map" role="img" aria-label="The Southern Cross and its two pointer stars, drawn as on a star chart"></svg>
+              <p class="sky__cap"><b>The Southern Cross</b> <span id="sky-crux-alt"></span></p>
+              <p class="sky__note" id="sky-crux-note"></p>
+            </div>
+          </div>
+          <p class="sky__src">Calculated in your browser from today's date and Port Louis. Not a live feed.</p>
+        </div>
+
         <div class="dossier__file" data-reveal>
           <div class="dossier__filehead">
             <p class="eyebrow">Availability &amp; status</p>

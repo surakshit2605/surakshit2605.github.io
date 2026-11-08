@@ -329,10 +329,12 @@ a.contact__item:hover .contact__arr { transform: translate(4px, -4px); }
 @media (max-width: 1100px) {
   .dossier__loc, .dossier__clock, .dossier__file, .dossier__goal { grid-column: span 12; }
   .project__cols { grid-template-columns: 1fr; }
-  .year { grid-template-columns: 1fr; }
-  .year__head { position: relative; top: 0; }
-  .year__big { grid-template-columns: auto 1fr; align-items: baseline; gap: 18px; }
-  .year__big b { font-size: clamp(4.4rem, 16vw, 7rem); }
+  /* One column: the year heading becomes a slim bar that stays pinned under the top bar while that year's semesters scroll (like the left column on a computer). */
+  .year { grid-template-columns: 1fr; gap: 18px; }
+  .year__head { display: contents; }
+  .year__big { position: sticky; top: calc(var(--nav-h) - 6px); z-index: 6; display: flex; align-items: baseline; gap: 14px; margin: 0 calc(-1 * var(--gutter)); padding: 8px var(--gutter) 10px; background: linear-gradient(180deg, rgba(var(--bg-rgb), 0.92), rgba(var(--bg-rgb), 0.82)); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); border-bottom: var(--hair); line-height: 1; }
+  .year__big b { font-size: clamp(2.4rem, 9vw, 3.4rem); line-height: 0.9; }
+  .year__focus { margin-top: 0; max-width: none; }
 }
 @media (max-width: 960px) {
   .skx { grid-template-columns: 1fr; }
@@ -513,3 +515,33 @@ a, button, summary, [role='button'] { touch-action: manipulation; }
 .menu__side .quality__hint { margin: 10px 0 0; max-width: 34ch; font-size: 0.82rem; line-height: 1.5; color: var(--muted); }
 .qtoast { position: fixed; left: 50%; bottom: max(28px, env(safe-area-inset-bottom)); transform: translate(-50%, 12px); z-index: 130; padding: 12px 18px; background: rgba(5, 8, 16, 0.94); border: 1px solid rgba(var(--sky-rgb), 0.45); color: #fff; font-family: var(--mono); font-size: 0.74rem; letter-spacing: 0.12em; opacity: 0; transition: opacity 0.35s, transform 0.45s var(--ease-out); max-width: 92vw; text-align: center; }
 .qtoast.is-in { opacity: 1; transform: translate(-50%, 0); }
+
+/* ---------- Live sky (Profile) ---------- */
+.dossier__sky { grid-column: span 12; border: var(--hair); padding: clamp(20px, 2.6vw, 32px); background: rgba(var(--bg-rgb), 0.72); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.sky__where { margin-left: 14px; color: var(--muted); letter-spacing: 0.16em; }
+.sky { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: clamp(20px, 4vw, 64px); margin-top: 18px; align-items: center; }
+.sky__arc { width: 100%; height: auto; display: block; overflow: visible; }
+.sky__path { fill: none; stroke: var(--sky); stroke-width: 1.2; stroke-dasharray: 3 6; opacity: 0.6; }
+.sky__horizon { stroke: var(--text-2); stroke-width: 1; opacity: 0.4; }
+.sky__sundot { fill: #ffc83d; filter: drop-shadow(0 0 6px rgba(255, 200, 61, 0.9)); }
+.sky__sunhalo { fill: rgba(255, 200, 61, 0.2); }
+.is-night .sky__sundot { fill: #8fa6d6; filter: none; opacity: 0.55; }
+.is-night .sky__sunhalo { fill: none; }
+.sky__facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 24px; margin: 18px 0 0; }
+.sky__facts div { border-top: var(--hair); padding-top: 10px; }
+.sky__facts dt { font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); }
+.sky__facts dd { margin: 6px 0 0; font-family: var(--serif); font-size: clamp(1.5rem, 2.6vw, 2.1rem); line-height: 1.1; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+.sky__facts small { font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-left: 6px; }
+.sky__map { width: 100%; max-width: 380px; height: auto; display: block; overflow: visible; }
+.sky__ln { stroke: var(--sky); stroke-width: 1; opacity: 0.55; }
+.sky__ln--dash { stroke-dasharray: 2 5; opacity: 0.4; }
+.sky__star { fill: var(--text-2); }
+.sky__halo { fill: rgba(var(--sky-rgb), 0.16); }
+.sky__lab { font-family: var(--mono); font-size: 8.5px; letter-spacing: 0.14em; text-transform: uppercase; fill: var(--muted); }
+.sky__cap { margin: 10px 0 0; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-2); }
+.sky__cap span { color: var(--em); margin-left: 8px; }
+.sky__note { margin: 6px 0 0; font-size: 0.98rem; color: var(--text-2); }
+.sky__src { margin: 22px 0 0; font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+:root[data-theme='light'] .sky__star { fill: #14213d; }
+:root[data-theme='light'] .sky__sundot { fill: #f0a500; }
+@media (max-width: 860px) { .sky { grid-template-columns: 1fr; } }
