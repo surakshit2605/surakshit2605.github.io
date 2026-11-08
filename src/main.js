@@ -1,4 +1,5 @@
 import './styles/main.css';
+import './styles/editorial.css';
 import { gsap } from 'gsap';
 import { render } from './render.js';
 import { createScene } from './scene/scene.js';
@@ -53,6 +54,9 @@ async function start() {
   setTimeout(() => {
     document.querySelectorAll('[data-reveal]').forEach((el) => {
       if (el.getBoundingClientRect().top < window.innerHeight * 0.96) gsap.set(el, { opacity: 1, y: 0 });
+    });
+    document.querySelectorAll('.eh__title .w').forEach((el) => {
+      if (el.getBoundingClientRect().top < window.innerHeight * 0.92) gsap.set(el, { yPercent: 0, rotate: 0 });
     });
   }, 400);
 }

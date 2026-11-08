@@ -8,7 +8,7 @@ const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matc
  *  - a soft blue highlight that follows the pointer over the cards
  */
 export function initInfo() {
-  const card = document.querySelector('.pf__clock');
+  const card = document.querySelector('.dossier__clock');
   if (card) startClock(card);
 
   document.querySelectorAll('.icard').forEach((el) => {

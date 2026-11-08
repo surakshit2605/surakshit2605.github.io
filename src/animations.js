@@ -78,6 +78,36 @@ export function playIntro(readyPromise) {
   );
 }
 
+
+/** Wrap every word of an element's text in spans, keeping inline tags such as <em>. mask=true adds a clipping wrapper for rise-up reveals. */
+function splitWords(el, mask) {
+  const walk = (node) => {
+    [...node.childNodes].forEach((n) => {
+      if (n.nodeType === 3) {
+        const parts = n.textContent.split(/(\s+)/);
+        const frag = document.createDocumentFragment();
+        parts.forEach((w) => {
+          if (!w) return;
+          if (/^\s+$/.test(w)) { frag.appendChild(document.createTextNode(' ')); return; }
+          const word = document.createElement('span');
+          word.className = mask ? 'w' : 'lw';
+          word.textContent = w;
+          if (mask) {
+            const m = document.createElement('span');
+            m.className = 'wm';
+            m.appendChild(word);
+            frag.appendChild(m);
+          } else frag.appendChild(word);
+        });
+        n.replaceWith(frag);
+      } else if (n.nodeType === 1 && !n.classList.contains('badge')) walk(n);
+    });
+  };
+  walk(el);
+}
+
+const SEC_LABEL = {};
+
 export function initScroll(scene) {
   // Scene camera follows the section in view (runs for all motion preferences).
   gsap.utils.toArray('[data-scene]').forEach((sec) => {
@@ -100,6 +130,12 @@ export function initScroll(scene) {
       onToggle: (self) => {
         if (!self.isActive) return;
         links.forEach((a) => a.classList.toggle('is-active', a.dataset.target === sec.id));
+        const hud = document.querySelector('.hud');
+        const a = document.querySelector(`.menu__list a[data-target="${sec.id}"]`);
+        if (hud && a) {
+          hud.querySelector('.hud__n').textContent = a.querySelector('.menu__num').textContent;
+          hud.querySelector('.hud__l').textContent = a.querySelector('.menu__line').textContent;
+        }
       },
     });
   });
@@ -130,12 +166,38 @@ export function initScroll(scene) {
     scrollTrigger: { start: 0, end: 'max', scrub: 0.3 },
   });
 
-  gsap.set('[data-reveal]', { opacity: 0, y: 40 });
+  gsap.set('[data-reveal]', { opacity: 0, y: 28 });
   ScrollTrigger.batch('[data-reveal]', {
     start: 'top 96%',
     once: true,
     onEnter: (els) =>
       gsap.to(els, { opacity: 1, y: 0, duration: 1, stagger: 0.1, ease: 'power3.out', overwrite: true }),
+  });
+
+  // Section titles: each word rises out of a mask. Ghost numerals drift slower than the page.
+  gsap.utils.toArray('.eh__title').forEach((t) => {
+    splitWords(t, true);
+    const ws = t.querySelectorAll('.w');
+    gsap.set(ws, { yPercent: 118, rotate: 3 });
+    ScrollTrigger.create({
+      trigger: t,
+      start: 'top 92%',
+      once: true,
+      onEnter: () => gsap.to(ws, { yPercent: 0, rotate: 0, duration: 1.15, stagger: 0.09, ease: 'power4.out' }),
+    });
+  });
+  gsap.utils.toArray('.eh__ghost').forEach((g) => {
+    gsap.fromTo(g, { yPercent: 18 }, { yPercent: -22, ease: 'none', scrollTrigger: { trigger: g.closest('.section'), start: 'top bottom', end: 'bottom top', scrub: 0.6 } });
+  });
+  // Lead paragraphs light up word by word as they scroll through the reading zone.
+  gsap.utils.toArray('[data-lit]').forEach((p) => {
+    splitWords(p, false);
+    const ws = p.querySelectorAll('.lw');
+    gsap.set(ws, { opacity: 0.18 });
+    gsap.to(ws, {
+      opacity: 1, ease: 'none', stagger: 0.12,
+      scrollTrigger: { trigger: p, start: 'top 86%', end: 'bottom 55%', scrub: 0.5 },
+    });
   });
 
   const o = { v: 0 };

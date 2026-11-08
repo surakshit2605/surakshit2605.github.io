@@ -48,11 +48,27 @@ export const SECTIONS = [
   { id: 'contact', label: 'Contact' },
 ];
 
-const head = (num, label, title) => `
-  <div class="section__head">
-    <p class="label" data-reveal>${num} / ${esc(label)}</p>
-    <h2 class="title" data-reveal>${esc(title)}</h2>
-  </div>`;
+const DECKS = String(SECTIONS.length).padStart(2, '0');
+const COORD = '20.2°S · 57.5°E';
+
+/** Wrap given phrases in <em class="hl"> (text is escaped first; phrases that are not found are ignored). */
+const emp = (text, phrases = []) =>
+  phrases.reduce((out, ph) => out.replace(esc(ph), (m) => `<em class="hl">${m}</em>`), esc(text));
+
+/** Editorial section header: ghost numeral, mono meta line, big serif title whose last word(s) are italic. */
+const head = (num, label, title, id = '', italicWords = 1) => {
+  const w = title.split(' ');
+  const cut = Math.max(1, w.length - italicWords);
+  const roman = esc(w.slice(0, cut).join(' '));
+  const ital = esc(w.slice(cut).join(' '));
+  const long = title.length > 22 ? ' eh__title--long' : '';
+  return `
+  <header class="eh">
+    <span class="eh__ghost" aria-hidden="true">${num}</span>
+    <p class="eh__meta" data-reveal><span>Deck ${num}<i>/</i>${DECKS}</span><span>${esc(label)}</span><span class="eh__coord">${COORD}</span></p>
+    <h2 class="eh__title${long}"${id ? ` id="${id}"` : ''}>${roman}${ital ? ` <em>${ital}</em>` : ''}</h2>
+  </header>`;
+};
 
 function cvLink(cl) {
   return cv.file
@@ -65,17 +81,20 @@ const PHOTO_W = 498;
 function hero() {
   const chars = (word) =>
     [...word].map((c) => `<span class="char" aria-hidden="true" data-c="${esc(c)}">${esc(c)}</span>`).join('');
-  const words = profile.name
-    .split(' ')
-    .map((w) => `<span class="word">${chars(w)}</span>`)
+  const parts = profile.name.split(' ');
+  const words = parts
+    .map((w, i) => `<span class="word${i === parts.length - 1 ? ' word--it' : ''}">${chars(w)}</span>`)
     .join(' ');
+  const [roleA, roleB] = profile.role.split(' · ');
   return `
   <section class="section hero" id="hero" data-scene="hero" aria-label="Introduction">
     <div class="wrap">
-      <p class="label hero__role" data-hero>${esc(profile.role)}</p>
+      <p class="hero__meta" data-hero><span class="label hero__role">${esc(roleA)}${roleB ? `<i>·</i>${esc(roleB)}` : ''}</span><span class="hero__coord">${COORD}</span></p>
       <h1 class="hero__name" aria-label="${esc(profile.name)}">${words}</h1>
-      <p class="hero__headline" data-hero>${esc(profile.headline)}</p>
-      <p class="hero__intro" data-hero>${esc(profile.intro)}</p>
+      <div class="hero__row" data-hero>
+        <p class="hero__headline">${emp(profile.headline, ['defend the networks'])}</p>
+        <p class="hero__intro">${esc(profile.intro)}</p>
+      </div>
       <div class="hero__cta" data-hero>
         <a class="btn btn--primary" href="#projects" data-nav>View projects</a>
         <a class="btn" href="#contact" data-nav>Get in touch</a>
@@ -87,18 +106,30 @@ function hero() {
 }
 
 function aboutSection() {
-  const paras = about.paragraphs
-    .map((p) => `<p class="body${cls(p.placeholder)}" data-reveal>${esc(p.text)} ${badge(p.placeholder)}</p>`)
+  const [lead, ...rest] = about.paragraphs;
+  const restHtml = rest
+    .map((p) => `<p class="about__p${cls(p.placeholder)}" data-reveal>${emp(p.text, ['how to secure them'])} ${badge(p.placeholder)}</p>`)
     .join('');
-  const tags = about.interests.map((i) => `<li class="tag">${esc(i)}</li>`).join('');
+  const tags = about.interests
+    .map((i, n) => `<li><span>${String(n + 1).padStart(2, '0')}</span>${esc(i)}</li>`)
+    .join('');
   return `
   <section class="section about" id="about" data-scene="about" aria-labelledby="about-t">
     <div class="wrap wrap--left">
-      ${head(nextNo(), 'About', 'About me').replace('class="title"', 'class="title" id="about-t"')}
-      <div class="stack">
-        ${paras}
-        <ul class="tags" data-reveal aria-label="Interests">${tags}</ul>
-        <p class="body${cls(about.ambitions.placeholder)}" data-reveal><strong>Ambitions.</strong> ${esc(about.ambitions.text)} ${badge(about.ambitions.placeholder)}</p>
+      ${head(nextNo(), 'About', 'About me', 'about-t')}
+      <div class="about__grid">
+        <p class="about__lead${cls(lead.placeholder)}" data-lit>${emp(lead.text, ['Computer Science', 'Network Security'])} ${badge(lead.placeholder)}</p>
+        <div class="about__cols">
+          <div class="about__text">${restHtml}</div>
+          <div class="about__idx" data-reveal>
+            <p class="eyebrow">Interests</p>
+            <ol class="idx" aria-label="Interests">${tags}</ol>
+          </div>
+        </div>
+        <blockquote class="pull${cls(about.ambitions.placeholder)}" data-reveal>
+          <p class="eyebrow">Ambitions</p>
+          <p class="pull__text">${emp(about.ambitions.text, ['internship'])} ${badge(about.ambitions.placeholder)}</p>
+        </blockquote>
       </div>
     </div>
     ${
@@ -128,10 +159,10 @@ function certCard(c) {
     c.pdf ? `<a class="link" href="${esc(asset(c.pdf))}" target="_blank" rel="noopener">View PDF ↗</a>` : '',
   ].join('');
   return `
-    <li><article class="ccard icard" data-reveal>
+    <li><article class="ccard" data-reveal>
       ${media}
       <div class="ccard__body">
-        ${c.year ? `<p class="label">${esc(c.year)}</p>` : ''}
+        ${c.year ? `<p class="ccard__year">${esc(c.year)}</p>` : ''}
         <h4 class="ccard__name">${esc(c.name)}</h4>
         <p class="ccard__inst" title="${esc(c.institution)}">${esc(c.institution)}</p>
         ${tags ? `<ul class="tags tags--sm" aria-label="Details">${tags}</ul>` : ''}
@@ -143,15 +174,15 @@ function certCard(c) {
 function profileSection() {
   const loc = info.location;
   const focus = info.focus
-    .map((f) => `<li class="focus__item" data-reveal><span class="icontile">${icon(f.icon)}</span><span>${esc(f.name)}</span></li>`)
+    .map((f, n) => `<li class="focus__item" data-reveal><span class="focus__n">${String(n + 1).padStart(2, '0')}</span><span class="focus__t">${esc(f.name)}</span><span class="icontile">${icon(f.icon)}</span></li>`)
     .join('');
   const quals = qualifications
     .map(
       (q) => `
-    <li><article class="ccard ccard--qual icard" data-reveal>
+    <li><article class="ccard ccard--qual" data-reveal>
       <div class="ccard__img ccard__img--none ccard__img--qual" aria-hidden="true">${icon(q.icon || 'graduation')}</div>
       <div class="ccard__body">
-        <p class="label">${esc(q.year)}</p>
+        <p class="ccard__year">${esc(q.year)}</p>
         <h4 class="ccard__name">${esc(q.name)}</h4>
         <p class="ccard__inst">${esc(q.institution)}</p>
         <ul class="tags tags--sm"><li class="tag tag--live">${esc(q.status)}</li></ul>
@@ -163,30 +194,27 @@ function profileSection() {
   return `
   <section class="section" id="profile" data-scene="profile" aria-labelledby="pf-t">
     <div class="wrap">
-      ${head(nextNo(), 'Profile', info.title).replace('class="title"', 'class="title" id="pf-t"')}
-      <div class="pf">
-        <article class="pcard icard pf__loc" data-reveal>
-          <span class="icontile">${icon('pin')}</span>
-          <p class="label">Location</p>
-          <p class="pf__big">${FLAG_MU}<span>${esc(loc.country)}</span></p>
-          <p class="muted">${esc(loc.place)}</p>
-          <p class="pf__zone"><span>${esc(loc.timezone)}</span><span>${esc(loc.zoneLabel)}</span></p>
-        </article>
+      ${head(nextNo(), 'Profile', info.title, 'pf-t')}
+      <div class="dossier">
+        <div class="dossier__loc" data-reveal>
+          <p class="eyebrow">Location</p>
+          <p class="dossier__country">${FLAG_MU}<span>${esc(loc.country)}</span></p>
+          <p class="dossier__place">${esc(loc.place)}</p>
+          <p class="dossier__zone"><span>${esc(loc.timezone)}</span><span>${esc(loc.zoneLabel)}</span></p>
+        </div>
 
-        <article class="pcard icard pf__clock" data-reveal data-tz="${esc(loc.timezone)}">
-          <span class="icontile">${icon('clock')}</span>
-          <p class="label">Local time <span class="live"><i></i>Live</span></p>
+        <div class="dossier__clock" data-reveal data-tz="${esc(loc.timezone)}">
+          <p class="eyebrow">Local time <span class="live"><i></i>Live</span></p>
           <p class="clock" aria-hidden="true"><span id="ck-h">--</span><span class="clock__sep">:</span><span id="ck-m">--</span><span class="clock__sep">:</span><span class="clock__s" id="ck-s">--</span></p>
           <p class="pf__date" id="ck-date">&nbsp;</p>
           <p class="muted small" id="ck-rel"></p>
           <span class="clock__bar" aria-hidden="true"><i id="ck-bar"></i></span>
           <p class="sr" id="ck-sr"></p>
-        </article>
+        </div>
 
-        <article class="pcard icard pf__status" data-reveal>
-          <div class="pf__head">
-            <span class="icontile">${icon('target')}</span>
-            <p class="label">Availability &amp; status</p>
+        <div class="dossier__file" data-reveal>
+          <div class="dossier__filehead">
+            <p class="eyebrow">Availability &amp; status</p>
             <p class="pf__open"><i></i>Looking for an internship</p>
           </div>
           <dl class="facts">
@@ -196,18 +224,22 @@ function profileSection() {
             <div><dt>Expected graduation</dt><dd>${esc(gradYear)}</dd></div>
             <div><dt>Looking for</dt><dd>${esc(info.status.looking)}</dd></div>
           </dl>
-          <p class="pf__goal"><strong>Career goal</strong>${esc(about.ambitions.text)}</p>
-        </article>
+        </div>
 
-        <article class="pcard icard pf__focus" data-reveal>
-          <p class="label">Current professional interests</p>
+        <blockquote class="pull dossier__goal" data-reveal>
+          <p class="eyebrow">Career goal</p>
+          <p class="pull__text">${emp(about.ambitions.text, ['internship'])}</p>
+        </blockquote>
+
+        <div class="dossier__focus" data-reveal>
+          <p class="eyebrow">Current professional interests</p>
           <ul class="focus">${focus}</ul>
-        </article>
+        </div>
       </div>
 
       <div class="certs-head" data-reveal>
-        <h3 class="chapter__title">Certifications &amp; qualifications</h3>
-        <p class="muted small">Select a certificate to view it in full.</p>
+        <h3 class="sub">Certifications <em>&amp; qualifications</em></h3>
+        <p class="eyebrow">Select a certificate to view it in full.</p>
       </div>
       <ul class="cgrid">${quals}${certifications.map(certCard).join('')}</ul>
     </div>
@@ -219,7 +251,7 @@ function certParts(parts) {
     .map(
       (pt) => `
     <section class="part" data-reveal aria-label="${esc(pt.label)}: ${esc(pt.title)}">
-      <p class="label">${esc(pt.label)}</p>
+      <p class="eyebrow">${esc(pt.label)}</p>
       <h5 class="part__title">${esc(pt.title)}</h5>
       ${pt.text ? `<p class="body small part__text">${esc(pt.text)}</p>` : ''}
       ${
@@ -263,7 +295,7 @@ function certificate(c) {
   <article class="cert${c.portrait ? ' cert--portrait' : ''}${cls(c.placeholder)}" data-reveal>
     <div class="cert__frame">${frame}</div>
     <div class="cert__text">
-      ${c.year ? `<p class="label">${esc(c.year)}</p>` : ''}
+      ${c.year ? `<p class="cert__year">${esc(c.year)}</p>` : ''}
       <h4 class="cert__name">${esc(c.name)} ${badge(c.placeholder)}</h4>
       <p class="cert__inst">${esc(c.institution)}</p>
       ${c.tags && c.tags.length ? `<ul class="tags tags--sm" aria-label="Details">${c.tags.map((t) => `<li class="tag">${esc(t)}</li>`).join('')}</ul>` : ''}
@@ -275,29 +307,30 @@ function certificate(c) {
 function backgroundSection() {
   const chapters = background.chapters
     .map((ch, i) => {
+      const num = esc(ch.label.replace(/^Chapter\s+/i, ''));
       const html = `
       <div class="chapter" data-reveal>
-        <p class="label">${esc(ch.label)}</p>
+        <p class="chapter__label"><span>${esc(ch.label)}</span></p>
         <h3 class="chapter__title">${esc(ch.title)}</h3>
-        ${ch.summary ? `<p class="muted">${esc(ch.summary)}</p>` : ''}
+        ${ch.summary ? `<p class="chapter__sum">${esc(ch.summary)}</p>` : ''}
       </div>
       <div class="certs">${ch.certificates.map(certificate).join('')}</div>`;
       const bridge =
         i === (background.bridge.after ?? 0) && i < background.chapters.length - 1
           ? `
-      <div class="bridge" data-reveal>
-        <p class="label">${esc(background.bridge.label)}</p>
-        <p class="bridge__text">${esc(background.bridge.text)}</p>
+      <div class="bridge">
+        <p class="eyebrow" data-reveal>${esc(background.bridge.label)}</p>
+        <p class="bridge__text" data-lit>${emp(background.bridge.text, ['analytical thinking and attention to detail'])}</p>
       </div>`
           : '';
-      return `<div class="chapter-wrap">${html}</div>${bridge}`;
+      return `<div class="chapter-wrap" data-roman="${num}">${html}</div>${bridge}`;
     })
     .join('');
   return `
   <section class="section" id="background" data-scene="background" aria-labelledby="bg-t">
     <div class="wrap">
-      ${head(nextNo(), 'Background', background.title).replace('class="title"', 'class="title" id="bg-t"')}
-      <p class="body" data-reveal>${esc(background.intro)}</p>
+      ${head(nextNo(), 'Background', background.title, 'bg-t')}
+      <p class="lede" data-lit>${esc(background.intro)}</p>
       <div class="bg-line">${chapters}</div>
     </div>
   </section>`;
@@ -307,8 +340,8 @@ function mapSection() {
   return `
   <section class="section section--map" id="map" data-scene="education" aria-labelledby="map-t">
     <div class="wrap">
-      ${head(nextNo(), journeyMap.label, journeyMap.title).replace('class="title"', 'class="title" id="map-t"')}
-      <p class="body" data-reveal>${esc(journeyMap.intro)}</p>
+      ${head(nextNo(), journeyMap.label, journeyMap.title, 'map-t')}
+      <p class="lede" data-lit>${esc(journeyMap.intro)}</p>
       ${mapMarkup()}
     </div>
   </section>`;
@@ -318,58 +351,58 @@ function educationSection() {
   return `
   <section class="section" id="education" data-scene="education" aria-labelledby="edu-t">
     <div class="wrap wrap--left">
-      ${head(nextNo(), 'Education', 'Academic timeline').replace('class="title"', 'class="title" id="edu-t"')}
-      <div class="panel panel--deco" data-reveal>
-        <img class="panel__deco" src="${asset(visuals.hex)}" alt="" aria-hidden="true" loading="lazy" decoding="async" width="678" height="452" />
-        <h3 class="panel__title">${esc(education.degree)}</h3>
-        <p class="muted">${esc(education.institution)}</p>
+      ${head(nextNo(), 'Education', 'Academic timeline', 'edu-t')}
+      <div class="edu" data-reveal>
+        <img class="edu__deco" src="${asset(visuals.hex)}" alt="" aria-hidden="true" loading="lazy" decoding="async" width="678" height="452" />
+        <p class="eyebrow">${esc(education.status)}</p>
+        <h3 class="edu__degree">${esc(education.degree)}</h3>
+        <p class="edu__inst">${esc(education.institution)}</p>
         <div class="timeline" id="timeline"
              data-start="${esc(education.start)}" data-end="${esc(education.end)}">
+          <p class="timeline__big" aria-hidden="true"><b id="timeline-pct">0%</b></p>
           <div class="timeline__track"><i class="timeline__fill" id="timeline-fill"></i></div>
           <ol class="timeline__marks">
             <li><span class="dot"></span><b>${esc(education.startLabel)}</b><small>Start</small></li>
-            <li class="now" id="timeline-now"><span class="dot"></span><b id="timeline-pct">0%</b><small>Today</small></li>
+            <li class="now" id="timeline-now"><span class="dot"></span><small>Today</small></li>
             <li><span class="dot"></span><b>${esc(education.endLabel)}</b><small>Completion</small></li>
           </ol>
         </div>
-        <p class="muted small">Progress is calculated automatically from the dates in <code>content.js</code>.</p>
       </div>
     </div>
   </section>`;
 }
 
 function skillsSection() {
-  const cards = skills
-    .map((g) => {
+  const groups = skills
+    .map((g, gi) => {
       const real = g.items.filter((i) => !i.placeholder).length;
       const items = g.items
         .map(
-          (i) => `
-          <li class="skill${cls(i.placeholder)}">
-            <span class="icontile">${icon(i.icon)}</span>
-            <div class="skill__text">
-              <span class="skill__name">${esc(i.name)}</span>${badge(i.placeholder)}
-              ${i.description ? `<span class="skill__desc">${esc(i.description)}</span>` : ''}
-            </div>
+          (i, n) => `
+          <li class="skrow${cls(i.placeholder)}">
+            <span class="skrow__n">${String(n + 1).padStart(2, '0')}</span>
+            <span class="skrow__name">${esc(i.name)}${badge(i.placeholder)}</span>
+            ${i.description ? `<span class="skrow__desc">${esc(i.description)}</span>` : ''}
+            <span class="skrow__ic icontile">${icon(i.icon)}</span>
           </li>`
         )
         .join('');
       return `
-      <article class="card card--skills" data-reveal>
-        <header class="skillcat">
-          <span class="icontile icontile--lg">${icon(g.icon)}</span>
-          <h3 class="card__title">${esc(g.category)}</h3>
-          <span class="count" aria-label="${real} skills">${String(real).padStart(2, '0')}</span>
+      <article class="skgrp" data-reveal>
+        <header class="skgrp__head">
+          <span class="skgrp__id">${String.fromCharCode(65 + gi)}</span>
+          <h3 class="skgrp__title">${esc(g.category)}</h3>
+          <span class="skgrp__count" aria-label="${real} skills">${String(real).padStart(2, '0')} <i>items</i></span>
         </header>
-        <ul class="skilllist">${items}</ul>
+        <ul class="skrows">${items}</ul>
       </article>`;
     })
     .join('');
   return `
   <section class="section" id="skills" data-scene="skills" aria-labelledby="sk-t">
     <div class="wrap">
-      ${head(nextNo(), 'Skills', 'Technical skills').replace('class="title"', 'class="title" id="sk-t"')}
-      <div class="grid grid--2">${cards}</div>
+      ${head(nextNo(), 'Skills', 'Technical skills', 'sk-t')}
+      <div class="skx">${groups}</div>
     </div>
   </section>`;
 }
@@ -378,53 +411,55 @@ const STATUS = { completed: 'Completed', current: 'Current', upcoming: 'Upcoming
 
 function journeySection() {
   const years = journey
-    .map((y) => {
+    .map((y, yi) => {
       const sems = y.semesters
         .map((s) => {
           const mods = s.modules.length
-            ? `<ul class="modules">${s.modules
+            ? `<ol class="mods">${s.modules
                 .map(
-                  (m) => `
-                <li class="module">
-                  <span class="module__name">${esc(m.name)}</span>
-                  <span class="module__desc">${esc(m.description)}</span>
+                  (m, n) => `
+                <li class="mod">
+                  <span class="mod__n">${String(n + 1).padStart(2, '0')}</span>
+                  <div class="mod__main">
+                    <h5 class="mod__name">${esc(m.name)}</h5>
+                    <p class="mod__desc">${esc(m.description)}</p>
+                  </div>
                   ${
                     m.topics && m.topics.length
-                      ? `<ul class="tags tags--sm" aria-label="Topics">${m.topics
-                          .map((t) => `<li class="tag">${esc(t)}</li>`)
-                          .join('')}</ul>`
+                      ? `<ul class="topics" aria-label="Topics">${m.topics.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>`
                       : ''
                   }
                 </li>`
                 )
-                .join('')}</ul>`
-            : `<p class="muted small${s.placeholder ? ' is-placeholder' : ''}">${esc(s.empty || 'Modules to be added.')} ${badge(s.placeholder)}</p>`;
+                .join('')}</ol>`
+            : `<p class="sem__empty${s.placeholder ? ' is-placeholder' : ''}">${esc(s.empty || 'Modules to be added.')} ${badge(s.placeholder)}</p>`;
           return `
-          <article class="card card--sem is-${s.status}" data-reveal>
-            <div class="card__top">
-              <h4 class="card__title">${esc(s.semester)}</h4>
-              <span class="status status--${s.status}">${STATUS[s.status]}</span>
-            </div>
-            ${s.period ? `<p class="label">${esc(s.period)}</p>` : ''}
+          <article class="sem is-${s.status}" data-reveal>
+            <header class="sem__head">
+              <h4 class="sem__title">${esc(s.semester)}</h4>
+              <span class="status status--${s.status}"><i></i>${STATUS[s.status]}</span>
+            </header>
+            ${s.period ? `<p class="sem__period">${esc(s.period)}</p>` : ''}
             ${mods}
           </article>`;
         })
         .join('');
+      const yw = String(y.year).split(' ');
       return `
       <div class="year">
-        <div class="year__head" data-reveal>
-          <h3 class="year__title">${esc(y.year)}</h3>
-          ${y.focus ? `<p class="muted small">${esc(y.focus)}</p>` : ''}
-        </div>
-        <div class="grid grid--2">${sems}</div>
+        <aside class="year__head" data-reveal>
+          <p class="year__big" aria-label="${esc(y.year)}">${yw.length > 1 ? `<span>${esc(yw[0])}</span><b>${esc(yw.slice(1).join(' '))}</b>` : esc(y.year)}</p>
+          ${y.focus ? `<p class="year__focus">${esc(y.focus)}</p>` : ''}
+        </aside>
+        <div class="year__sems">${sems}</div>
       </div>`;
     })
     .join('');
   return `
   <section class="section" id="journey" data-scene="journey" aria-labelledby="jr-t">
     <div class="wrap">
-      ${head(nextNo(), 'Journey', 'Academic journey').replace('class="title"', 'class="title" id="jr-t"')}
-      ${years}
+      ${head(nextNo(), 'Journey', 'Academic journey', 'jr-t')}
+      <div class="archive">${years}</div>
     </div>
   </section>`;
 }
@@ -442,8 +477,8 @@ function projectsSection() {
         .filter(Boolean)
         .join('');
       const meta = [
-        p.partner && `<span>Built with ${esc(p.partner)}</span>`,
-        p.role && `<span>My part: ${esc(p.role)}</span>`,
+        p.partner && `<div><dt>Built with</dt><dd>${esc(p.partner)}</dd></div>`,
+        p.role && `<div><dt>My part</dt><dd>${esc(p.role)}</dd></div>`,
       ]
         .filter(Boolean)
         .join('');
@@ -451,11 +486,13 @@ function projectsSection() {
       <li class="project${cls(p.placeholder)}" data-reveal>
         <span class="project__num" aria-hidden="true">${String(i + 1).padStart(2, '0')}</span>
         <div class="project__body">
-          <h3 class="project__title">${esc(p.title)} ${badge(p.placeholder)}
-            ${p.team ? `<span class="tag">${esc(p.team)}</span>` : ''}</h3>
+          <h3 class="project__title">${esc(p.title)} ${badge(p.placeholder)}</h3>
+          ${p.team ? `<p class="project__team"><span>${esc(p.team)}</span></p>` : ''}
           ${stackLine ? `<p class="project__stack">${esc(stackLine)}</p>` : ''}
-          <p class="project__desc">${esc(p.description)}</p>
-          ${meta ? `<p class="project__meta">${meta}</p>` : ''}
+          <div class="project__cols">
+            <p class="project__desc">${esc(p.description)}</p>
+            ${meta ? `<dl class="project__meta">${meta}</dl>` : ''}
+          </div>
           ${p.image ? `<img class="project__img" src="${esc(asset(p.image))}" alt="Screenshot of ${esc(p.title)}" loading="lazy" />` : ''}
           ${links ? `<div class="card__links">${links}</div>` : ''}
         </div>
@@ -465,8 +502,8 @@ function projectsSection() {
   return `
   <section class="section" id="projects" data-scene="projects" aria-labelledby="pr-t">
     <div class="wrap">
-      ${head(nextNo(), 'Projects', projectsIntro.title).replace('class="title"', 'class="title" id="pr-t"')}
-      <p class="body" data-reveal>${esc(projectsIntro.text)}</p>
+      ${head(nextNo(), 'Projects', projectsIntro.title, 'pr-t')}
+      <p class="lede lede--sm" data-reveal>${esc(projectsIntro.text)}</p>
       <ol class="projects">${rows}</ol>
     </div>
   </section>`;
@@ -479,14 +516,14 @@ function achievementsSection() {
       <li class="row${cls(a.placeholder)}" data-reveal>
         <span class="row__date">${esc(a.date || '—')}</span>
         <span class="row__main"><b>${esc(a.title)}</b> ${badge(a.placeholder)}<small>${esc(a.issuer)}${a.tag ? ` · ${esc(a.tag)}` : ''}</small></span>
-        ${a.link ? `<a class="link" href="${esc(a.link)}" target="_blank" rel="noopener noreferrer">Verify ↗</a>` : a.image ? `<button type="button" class="link link--btn" data-lightbox data-src="${esc(asset(a.image))}" data-caption="${esc(a.title)} – ${esc(a.issuer)}">View certificate</button>` : '<span></span>'}
+        ${a.link ? `<a class="link row__act" href="${esc(a.link)}" target="_blank" rel="noopener noreferrer">Verify ↗</a>` : a.image ? `<button type="button" class="link link--btn row__act" data-lightbox data-src="${esc(asset(a.image))}" data-caption="${esc(a.title)} – ${esc(a.issuer)}">View certificate</button>` : '<span></span>'}
       </li>`
     )
     .join('');
   return `
   <section class="section" id="achievements" data-scene="achievements" aria-labelledby="ac-t">
     <div class="wrap wrap--left">
-      ${head(nextNo(), 'Achievements', 'Other certificates & participation').replace('class="title"', 'class="title" id="ac-t"')}
+      ${head(nextNo(), 'Achievements', 'Other certificates & participation', 'ac-t')}
       <ul class="rows">${rows}</ul>
     </div>
   </section>`;
@@ -495,7 +532,7 @@ function achievementsSection() {
 function contactSection() {
   const links = contact.links
     .map((l) => {
-      const inner = `<span class="label">${esc(l.label)}</span><span class="contact__val">${esc(l.display)}</span>`;
+      const inner = `<span class="contact__label">${esc(l.label)}</span><span class="contact__val">${esc(l.display)}</span><span class="contact__arr" aria-hidden="true">↗</span>`;
       return l.href
         ? `<a class="contact__item" href="${esc(l.href)}" target="_blank" rel="noopener noreferrer" data-reveal>${inner}</a>`
         : `<div class="contact__item is-placeholder" data-reveal>${inner} ${badge(l.placeholder)}</div>`;
@@ -504,14 +541,14 @@ function contactSection() {
 
   const emailBtn = contact.email
     ? `<a class="btn btn--primary btn--lg" href="mailto:${esc(contact.email)}" data-reveal>Email me</a>
-       <p class="muted small" data-reveal>${esc(contact.email)}</p>
-       ${cvLink('btn btn--lg')}`
+       ${cvLink('btn btn--lg')}
+       <p class="contact__mail" data-reveal>${esc(contact.email)}</p>`
     : `<span class="btn btn--primary btn--lg is-placeholder-btn" aria-disabled="true" data-reveal>Email me ${badge(true)}</span>`;
 
   const form = site.contactForm.endpoint
     ? `
       <form class="form" id="contact-form" novalidate data-reveal>
-        <p class="label">Or send a message</p>
+        <p class="eyebrow">Or send a message</p>
         <div class="field"><label for="cf-name">Name</label>
           <input id="cf-name" name="name" autocomplete="name" required maxlength="80" /></div>
         <div class="field"><label for="cf-email">Email</label>
@@ -528,10 +565,10 @@ function contactSection() {
   return `
   <section class="section" id="contact" data-scene="contact" aria-labelledby="ct-t">
     <div class="vbg" aria-hidden="true"><img src="${asset(visuals.laptop)}" alt="" loading="lazy" decoding="async" width="1100" height="1375" /></div>
-    <div class="wrap wrap--center">
+    <div class="wrap contact__wrap">
       <div class="contact__panel">
-        ${head(nextNo(), 'Contact', "Let's connect").replace('class="title"', 'class="title" id="ct-t"')}
-        <p class="body" data-reveal>${esc(contact.intro)}</p>
+        ${head(nextNo(), 'Contact', "Let's connect", 'ct-t')}
+        <p class="lede lede--sm" data-reveal>${emp(contact.intro, ['internship'])}</p>
         <div class="contact__cta">${emailBtn}</div>
         <div class="contact">${links}</div>
         ${form}
@@ -571,5 +608,12 @@ export function render() {
   document.getElementById('menu-foot-l').textContent = profile.location || '';
   document.getElementById('menu-foot-r').textContent = `© ${new Date().getFullYear()}`;
 
+  if (!document.querySelector('.hud')) {
+    const h = document.createElement('div');
+    h.className = 'hud';
+    h.setAttribute('aria-hidden', 'true');
+    h.innerHTML = `<span class="hud__n">01</span><span class="hud__bar"></span><span class="hud__l">${esc(SECTIONS[0].label)}</span>`;
+    document.body.appendChild(h);
+  }
   document.getElementById('footer-text').textContent = `© ${new Date().getFullYear()} ${profile.name}`;
 }

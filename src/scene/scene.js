@@ -43,8 +43,8 @@ const SHOTS = {
   about: { st: 'neural', side: 3.4, dist: 11.5, h: 0.4, az: 0.15 },
   profile: { st: 'neural', side: -3.2, dist: 11.5, h: -0.3, az: -0.4 },
   background: { st: 'code', side: 4.6, dist: 12.5, h: 0.3, az: -0.12 },
-  education: { st: 'code', side: 3, dist: 9.5, h: -0.2, az: 0.32 },
-  skills: { st: 'servers', side: 0, dist: 19, h: 0.8, az: 0, ty: -2.4 }, // full-width cards: scene sits in the strip above them
+  education: { st: 'code', side: 4.8, dist: 9.5, h: -0.2, az: 0.32 },
+  skills: { st: 'servers', side: 3.6, dist: 19, h: 0.8, az: 0, ty: -2.4 }, // full-width cards: scene sits in the strip above them
   journey: { st: 'network', side: 3.4, dist: 15, h: 0.4, az: 0.3, ty: -2.2 },
   projects: { st: 'database', side: 3.2, dist: 16, h: 0.9, az: -0.2, ty: -2.4 },
   achievements: { st: 'crypto', side: 3.2, dist: 11.5, h: 0, az: 0.1 },
@@ -56,14 +56,17 @@ const MODEL_URL = `${import.meta.env.BASE_URL}models/core.glb`;
 export async function createScene(canvas) {
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  // Touch devices (phones AND tablets, iPad/Android) get the lighter scene whatever their width: a 1366px iPad Pro still has a mobile GPU.
+  const touch = window.matchMedia('(pointer: coarse)').matches;
   let renderer;
   try {
-    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: !touch, alpha: true, powerPreference: 'high-performance' });
   } catch (e) {
     return null; // caller adds .no-webgl
   }
-  const lite = window.innerWidth < 800;
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, lite ? 1.5 : 2));
+  const lite = window.innerWidth < 800 || touch;
+  let pr = Math.min(window.devicePixelRatio, touch ? 1.25 : 1.5); // 2x costs ~1.8x the pixels for little visible gain on a dark scene
+  renderer.setPixelRatio(pr);
   renderer.setClearColor(0x000000, 0);
 
   const scene = new THREE.Scene();
@@ -283,9 +286,13 @@ export async function createScene(canvas) {
 
   // ---- Sizing ---------------------------------------------------------
   let narrow = false;
+  let sw = 0, sh = 0;
   function resize() {
     const w = window.innerWidth;
     const h = window.innerHeight;
+    // iOS/Android toolbars hide and show while scrolling and fire resize each time. Re-allocating the canvas then causes stutter, so small height-only changes are ignored.
+    if (sw && w === sw && Math.abs(h - sh) < 160) return;
+    sw = w; sh = h;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
@@ -426,7 +433,23 @@ export async function createScene(canvas) {
     const clock = new THREE.Clock();
     let lastPx = cam.px;
     let roll = 0;
+    // Adaptive quality: if the device can't hold ~45 fps, lower the render resolution step by step (never raised again, so it can't flap).
+    let lastNow = performance.now(), slow = 0, fastN = 0, born = lastNow;
+    function watchSpeed() {
+      const now = performance.now(), ms = now - lastNow;
+      lastNow = now;
+      if (now - born < 5000 || ms > 250 || document.hidden) return; // ignore start-up, tab switches and stalls
+      slow = slow * 0.95 + ms * 0.05;
+      fastN++;
+      if (fastN > 90 && slow > 24 && pr > 0.75) {
+        pr = Math.max(0.75, pr - 0.25);
+        renderer.setPixelRatio(pr);
+        renderer.setSize(window.innerWidth, window.innerHeight, false);
+        fastN = 0;
+      }
+    }
     renderer.setAnimationLoop(() => {
+      watchSpeed();
       const dt = Math.min(clock.getDelta(), 0.05);
       const t = clock.elapsedTime;
       mouse.x += (mouse.tx - mouse.x) * 0.05;

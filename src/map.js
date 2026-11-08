@@ -126,7 +126,7 @@ export function initJourneyMap() {
   const $ = (id) => document.getElementById(id);
   const stage = $('jm-stage'), panel = $('jm-panel'), pinsEl = $('jm-ov');
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const lite = innerWidth < 800 || (navigator.hardwareConcurrency || 8) <= 4;
+  const lite = innerWidth < 800 || matchMedia('(pointer: coarse)').matches || (navigator.hardwareConcurrency || 8) <= 4;
   const pins = Object.fromEntries([...pinsEl.querySelectorAll('.jm-pin')].map((el) => [el.dataset.id, el]));
   const chips = [...root.querySelectorAll('.jm-chip[data-id], .jm-idx button[data-id]')];
   $('jm-tl').innerHTML = timelineHtml();
