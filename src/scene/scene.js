@@ -53,19 +53,22 @@ const SHOTS = {
 
 const MODEL_URL = `${import.meta.env.BASE_URL}models/core.glb`;
 
+import { getQuality } from '../quality.js';
+
 export async function createScene(canvas) {
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // Touch devices (phones AND tablets, iPad/Android) get the lighter scene whatever their width: a 1366px iPad Pro still has a mobile GPU.
   const touch = window.matchMedia('(pointer: coarse)').matches;
+  const quality = getQuality(); // 'auto' | 'low' | 'high'
   let renderer;
   try {
-    renderer = new THREE.WebGLRenderer({ canvas, antialias: !touch, alpha: true, powerPreference: 'high-performance' });
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: quality === 'high' || (!touch && quality !== 'low'), alpha: true, powerPreference: 'high-performance' });
   } catch (e) {
     return null; // caller adds .no-webgl
   }
-  const lite = window.innerWidth < 800 || touch;
-  let pr = Math.min(window.devicePixelRatio, touch ? 1.25 : 1.5); // 2x costs ~1.8x the pixels for little visible gain on a dark scene
+  const lite = quality === 'low' ? true : quality === 'high' ? false : window.innerWidth < 800 || touch;
+  let pr = Math.min(window.devicePixelRatio, quality === 'low' ? 1 : quality === 'high' ? 1.5 : touch ? 1.25 : 1.5); // 2x costs ~1.8x the pixels for little visible gain on a dark scene
   renderer.setPixelRatio(pr);
   renderer.setClearColor(0x000000, 0);
 
@@ -305,7 +308,8 @@ export async function createScene(canvas) {
 
   // ---- Theme ------------------------------------------------------------
   function setTheme(mode) {
-    th = sceneTheme(mode, document.documentElement.getAttribute('data-accent') || 'blue');
+    // The 3D space stays black-blue in BOTH themes (only the page in front changes), so the scene always uses the dark palette.
+    th = sceneTheme('dark', document.documentElement.getAttribute('data-accent') || 'blue');
     key.color.setHex(th.key);
     rim.color.setHex(th.rim);
     if (parts.solid) {

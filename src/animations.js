@@ -49,6 +49,7 @@ export function playIntro(readyPromise) {
     attr: { x1: 560, x2: 640 }, duration: 1.1, ease: 'power2.inOut', delay: 1.9,
   });
 
+  const logLines = [...document.querySelectorAll('#loader-log li')];
   const counter = { v: 0 };
   const minTime = new Promise((res) =>
     gsap.to(counter, {
@@ -59,6 +60,7 @@ export function playIntro(readyPromise) {
         const n = Math.round(counter.v);
         count.textContent = String(n).padStart(3, '0');
         bar.style.transform = `scaleX(${n / 100})`;
+        logLines.forEach((li) => { if (n >= +li.dataset.at) li.classList.add('on'); });
       },
       onComplete: res,
     })
@@ -115,8 +117,8 @@ export function initScroll(scene) {
       trigger: sec,
       start: 'top 55%',
       end: 'bottom 55%',
-      onEnter: () => scene?.goTo(sec.dataset.scene),
-      onEnterBack: () => scene?.goTo(sec.dataset.scene),
+      onEnter: () => { document.documentElement.dataset.room = sec.dataset.scene; scene?.goTo(sec.dataset.scene); document.dispatchEvent(new Event('station:section')); },
+      onEnterBack: () => { document.documentElement.dataset.room = sec.dataset.scene; scene?.goTo(sec.dataset.scene); document.dispatchEvent(new Event('station:section')); },
     });
   });
 
@@ -130,6 +132,7 @@ export function initScroll(scene) {
       onToggle: (self) => {
         if (!self.isActive) return;
         links.forEach((a) => a.classList.toggle('is-active', a.dataset.target === sec.id));
+        document.querySelectorAll('.mini a').forEach((m) => { const on = m.dataset.mini === sec.id; m.classList.toggle('is-active', on); if (on) m.setAttribute('aria-current', 'true'); else m.removeAttribute('aria-current'); });
         const hud = document.querySelector('.hud');
         const a = document.querySelector(`.menu__list a[data-target="${sec.id}"]`);
         if (hud && a) {

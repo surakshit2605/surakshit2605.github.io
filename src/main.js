@@ -15,6 +15,9 @@ import { initJourneyMap } from './map.js';
 import { initAtmosphere } from './atmosphere.js';
 import { applyAccent, savedAccent } from './accents.js';
 import { initAccent } from './accent.js';
+import { initSound } from './sound.js';
+import { initTerminal } from './terminal.js';
+import { initQuality } from './quality.js';
 import { logoSvg, initLogoHover } from './logo.js';
 
 async function start() {
@@ -39,6 +42,9 @@ async function start() {
   initMenu();
   initTheme(scene);
   initAccent(scene);
+  initSound();
+  initTerminal();
+  initQuality();
   initContactForm();
   initLightbox();
   initScroll(scene);

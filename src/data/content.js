@@ -6,6 +6,13 @@
  * dates come from you. Everything else is an empty, labelled placeholder.
  */
 
+// "Now": one short line about what you are working on or learning at the moment.
+// Leave text '' to hide it. When filled, it shows on the home screen and in the terminal (command: now).
+export const now = {
+  label: 'Now',
+  text: '',
+};
+
 export const profile = {
   name: 'Surakshit Kessoonath',
   role: 'Computer Science Student · Network Security',

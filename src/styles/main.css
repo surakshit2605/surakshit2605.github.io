@@ -100,12 +100,14 @@ img { max-width: 100%; display: block; }
 .atmos__beam { left: -30%; top: 18%; width: 160vmax; height: 20vmax; transform: rotate(-24deg); background: linear-gradient(180deg, transparent, rgba(var(--sky-rgb), 0.07) 50%, transparent); }
 .grain { position: fixed; inset: 0; z-index: 1; pointer-events: none; opacity: 0.05; mix-blend-mode: overlay; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
 :root[data-theme='light'] .grain { opacity: 0.035; mix-blend-mode: multiply; }
-:root[data-theme='light'] .atmos { background: radial-gradient(ellipse at 50% 0%, #ffffff, rgba(var(--bg-rgb), 1) 70%); }
-:root[data-theme='light'] .atmos__blue { background: radial-gradient(closest-side, rgba(var(--blue-rgb), 0.16), transparent 100%); }
-:root[data-theme='light'] .atmos__cyan { background: radial-gradient(closest-side, rgba(var(--cyan-rgb), 0.13), transparent 100%); }
-:root[data-theme='light'] .atmos__indigo { background: radial-gradient(closest-side, rgba(var(--indigo-rgb), 0.1), transparent 100%); }
+/* Light theme: a calm, pale page. The 3D scene (always the dark palette) is softened so it reads like ink on paper. */
+:root[data-theme='light'] .atmos { background: linear-gradient(180deg, #f8fafd 0%, #edf2fa 55%, #e0e9f6 100%); }
+:root[data-theme='light'] .atmos__blue { background: radial-gradient(closest-side, rgba(var(--blue-rgb), 0.14), transparent 100%); }
+:root[data-theme='light'] .atmos__cyan { background: radial-gradient(closest-side, rgba(var(--cyan-rgb), 0.11), transparent 100%); }
+:root[data-theme='light'] .atmos__indigo { background: radial-gradient(closest-side, rgba(var(--indigo-rgb), 0.08), transparent 100%); }
 :root[data-theme='light'] .atmos__beam { display: none; }
-:root[data-theme='light'] .atmos__grid { opacity: 0.4; }
+:root[data-theme='light'] .atmos__grid { opacity: 0.5; }
+:root[data-theme='light'] #scene { opacity: 0.74; }
 @media (max-width: 760px) { .atmos__beam { display: none; } .atmos__grid { background-size: 56px 56px; } }
 
 /* ---------- Loader ---------- (always dark, colours follow the chosen accent) */

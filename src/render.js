@@ -1,4 +1,5 @@
 import {
+  now,
   profile,
   about,
   education,
@@ -95,6 +96,7 @@ function hero() {
         <p class="hero__headline">${emp(profile.headline, ['defend the networks'])}</p>
         <p class="hero__intro">${esc(profile.intro)}</p>
       </div>
+      ${now.text ? `<p class="hero__now" data-hero><span class="label">${esc(now.label || 'Now')}</span>${esc(now.text)}</p>` : ''}
       <div class="hero__cta" data-hero>
         <a class="btn btn--primary" href="#projects" data-nav>View projects</a>
         <a class="btn" href="#contact" data-nav>Get in touch</a>
@@ -604,6 +606,7 @@ export function render() {
   document.getElementById('menu-side').innerHTML = `
     <div><p class="menu__who">${esc(profile.name)}</p><p>${esc(profile.role)}</p></div>
     ${contact.email ? `<div><h2>Contact</h2><a href="mailto:${esc(contact.email)}">${esc(contact.email)}</a></div>` : ''}
+    <div><h2>Display</h2><div class="quality" role="group" aria-label="3D quality"><button type="button" data-q="auto" aria-pressed="false">Auto</button><button type="button" data-q="low" aria-pressed="false">Light</button><button type="button" data-q="high" aria-pressed="false">Full</button></div><p class="quality__hint" aria-live="polite"></p></div>
     ${social || cv.file ? `<div><h2>Elsewhere</h2>${social}${cv.file ? `<a href="${esc(asset(cv.file))}" download target="_blank" rel="noopener">${esc(cv.label)} ↓</a>` : ''}</div>` : ''}`;
   document.getElementById('menu-foot-l').textContent = profile.location || '';
   document.getElementById('menu-foot-r').textContent = `© ${new Date().getFullYear()}`;
@@ -614,6 +617,13 @@ export function render() {
     h.setAttribute('aria-hidden', 'true');
     h.innerHTML = `<span class="hud__n">01</span><span class="hud__bar"></span><span class="hud__l">${esc(SECTIONS[0].label)}</span>`;
     document.body.appendChild(h);
+  }
+  if (!document.querySelector('.mini')) {
+    const m = document.createElement('nav');
+    m.className = 'mini';
+    m.setAttribute('aria-label', 'Rooms');
+    m.innerHTML = SECTIONS.map((s, i) => `<a href="#${s.id}" data-nav data-mini="${s.id}" data-label="${String(i + 1).padStart(2, '0')} ${esc(s.label)}" aria-label="${esc(s.label)}"></a>`).join('');
+    document.body.appendChild(m);
   }
   document.getElementById('footer-text').textContent = `© ${new Date().getFullYear()} ${profile.name}`;
 }

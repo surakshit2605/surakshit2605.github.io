@@ -335,9 +335,9 @@ export function createStation({ lite }) {
   // the Moon, close to the window of the records archive; crater shader, no image files
   const moonMat = new THREE.ShaderMaterial({
     transparent: true,
-    uniforms: { uFade: { value: 0 } },
+    uniforms: { uFade: { value: 0 }, uLift: { value: 0 } },
     vertexShader: 'varying vec3 vN; varying vec3 vP; void main(){ vP = position; vN = normalize(mat3(modelMatrix) * normal); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }',
-    fragmentShader: `uniform float uFade; varying vec3 vN; varying vec3 vP;
+    fragmentShader: `uniform float uFade; uniform float uLift; varying vec3 vN; varying vec3 vP;
       float h3(vec3 p){ return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
       float n3(vec3 p){ vec3 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f);
         return mix(mix(mix(h3(i), h3(i + vec3(1,0,0)), f.x), mix(h3(i + vec3(0,1,0)), h3(i + vec3(1,1,0)), f.x), f.y),
@@ -351,7 +351,7 @@ export function createStation({ lite }) {
         float g = 0.5 + 0.35 * rough - 0.22 * maria + crater * 0.5;
         vec3 sunDir = normalize(vec3(0.7, 0.25, 0.65));
         float d = max(dot(normalize(vN), sunDir), 0.);
-        vec3 c = vec3(g) * vec3(0.95, 0.93, 0.9) * (0.03 + 1.1 * d);
+        vec3 c = vec3(g) * vec3(0.95, 0.93, 0.9) * (0.03 + uLift * 0.38 + 1.1 * d); // uLift: light theme, no black night side
         gl_FragColor = vec4(c, uFade);
       }`,
   });
@@ -436,15 +436,16 @@ export function createStation({ lite }) {
   let isLight = false;
   function setTheme(lightMode) {
     isLight = lightMode;
-    metal.color.set(lightMode ? 0xe4e9f2 : 0x8a94a6);
-    metal.transparent = dark.transparent = lightMode; // pale, ghostly hull in the light theme so text stays readable
-    metal.opacity = lightMode ? 0.22 : 1;
-    dark.opacity = lightMode ? 0.18 : 1;
+    moonMat.uniforms.uLift.value = lightMode ? 1 : 0;
+    earth.mat.uniforms.uDim.value = lightMode ? (lite ? 1.35 : 1) : (lite ? 0.5 : 1); // light theme: dark text sits over it, so a brighter, paler planet
+    metal.color.set(lightMode ? 0xa9b8d0 : 0x8a94a6);
+    metal.transparent = dark.transparent = lightMode; // light theme: a see-through steel hull, so the rooms behind it still show
+    metal.opacity = lightMode ? 0.5 : 1;
+    dark.opacity = lightMode ? 0.5 : 1;
     metal.needsUpdate = dark.needsUpdate = true;
     metal.metalness = lightMode ? 0.35 : 0.85;
-    dark.color.set(lightMode ? 0xaab4c6 : 0x20252f);
-    stars.visible = !lightMode;
-    earth.group.visible = !lightMode;
+    dark.color.set(lightMode ? 0x6b7a94 : 0x20252f);
+    stars.visible = true;
     light.intensity = lightMode ? 1.3 : 0.9;
   }
 
@@ -453,28 +454,28 @@ export function createStation({ lite }) {
   function update(dt, t, camera) {
     deckOpacity += (deckTarget - deckOpacity) * (1 - Math.exp(-dt * 2.2));
     archOpacity += (archTarget - archOpacity) * (1 - Math.exp(-dt * 2.2));
-    arch.visible = !isLight && archOpacity > 0.01;
+    arch.visible = archOpacity > 0.01;
     archMat.opacity = archOpacity * 0.38;
     scanMat.opacity = archOpacity * 0.35;
     scan.position.y = 2 + Math.sin(t * 0.45) * 9;
     labOpacity += (labTarget - labOpacity) * (1 - Math.exp(-dt * 2.2));
     earthFade += (earthTarget - earthFade) * (1 - Math.exp(-dt * 3));
-    lab.visible = !isLight && labOpacity > 0.01;
+    lab.visible = labOpacity > 0.01;
     labMat.opacity = labOpacity * 0.6;
     ledMat.opacity = labOpacity * (0.5 + 0.5 * Math.sin(t * 3.1));
     labLight.intensity = labOpacity * 40;
-    earth.group.visible = !isLight && earthFade > 0.02;
+    earth.group.visible = earthFade > 0.02;
     earth.group.scale.setScalar(52 * (0.4 + 0.6 * earthFade));
     gasFade += (gasTarget - gasFade) * (1 - Math.exp(-dt * 2.5));
-    gasGroup.visible = !isLight && gasFade > 0.02;
+    gasGroup.visible = gasFade > 0.02;
     gasMat.uniforms.uFade.value = ringMat.uniforms.uFade.value = gasFade;
     gasBody.rotation.y += dt * 0.01;
     moonFade += (moonTarget - moonFade) * (1 - Math.exp(-dt * 2.5));
-    moon.visible = !isLight && moonFade > 0.02;
+    moon.visible = moonFade > 0.02;
     moonMat.uniforms.uFade.value = moonFade;
     moon.rotation.y += dt * 0.004;
     commFade += (commTarget - commFade) * (1 - Math.exp(-dt * 2.5));
-    comm.visible = !isLight && commFade > 0.02;
+    comm.visible = commFade > 0.02;
     sunMat.opacity = commFade * 0.9;
     dishMat.opacity = feedMat.opacity = commFade;
     commLight.intensity = commFade * 60;
@@ -486,8 +487,8 @@ export function createStation({ lite }) {
       p.m.opacity = commFade * (1 - k) * 0.5;
     });
     obs.visible = deckOpacity > 0.01;
-    deckMat.opacity = railMat.opacity = deckOpacity * (isLight ? 0.35 : 1);
-    deckGlowMat.opacity = deckOpacity * (isLight ? 0.35 : 0.7);
+    deckMat.opacity = railMat.opacity = deckOpacity * (isLight ? 0.85 : 1);
+    deckGlowMat.opacity = deckOpacity * (isLight ? 0.7 : 0.7);
     stars.position.copy(camera.position);
     earth.body.rotation.y += dt * 0.003;
     earth.mat.uniforms.uTime.value = t;
