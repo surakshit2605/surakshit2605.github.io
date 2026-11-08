@@ -6,6 +6,7 @@ const CESIUM_VERSION = '1.120.0';
 const CDN = (typeof window !== 'undefined' && window.__CESIUM_CDN__) || `https://cdn.jsdelivr.net/npm/cesium@${CESIUM_VERSION}/Build/Cesium/`;
 const ESRI = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
 const ORDER = ['home', 'school', 'uni'];
+const PLAY = '▶ Play<span class="jm-long"> the journey</span>';
 
 const esc = (s = '') => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const asset = (p) => (/^(https?:)?\/\//.test(p) ? p : import.meta.env.BASE_URL + p.replace(/^\//, ''));
@@ -38,7 +39,7 @@ const loadCesium = (() => {
 /* ------------------------------------------------------------------------------------------ markup */
 export function mapMarkup() {
   const P = J.places;
-  const pins = ORDER.map((id) => `<button class="jm-pin" type="button" data-id="${id}" aria-label="${esc(P[id].short)}: ${esc(P[id].name)}"><i class="jm-dot"></i><i class="jm-pulse"></i><span class="jm-lab"><b>${esc(P[id].short)}</b>${esc(P[id].name.replace(/ \(.*\)/, ''))}</span></button>`).join('');
+  const pins = ORDER.map((id) => `<button class="jm-pin" type="button" data-id="${id}" aria-label="${esc(P[id].short)}: ${esc(P[id].name)}"><i class="jm-dot"></i><i class="jm-pulse"></i><span class="jm-lab"><b>${esc(P[id].short)}</b><span class="jm-lab__n">${esc(P[id].name.replace(/ \(.*\)/, ''))}</span></span></button>`).join('');
   const chips = [['overview', 'Overview'], ...ORDER.map((id) => [id, P[id].short])].map(([id, t]) => `<button class="jm-chip" type="button" data-id="${id}">${esc(t)}</button>`).join('');
   return `
   <div class="jm" id="jm">
@@ -57,7 +58,7 @@ export function mapMarkup() {
       <p class="jm__scroll" id="jm-scrollhint"><span></span><em id="jm-scrolltxt">Scroll to travel</em></p>
       <button class="jm__explore" id="jm-explore" type="button">Explore the map</button>
       <p class="jm__hint" id="jm-hint">Drag to rotate · scroll or pinch to zoom · right-drag or two fingers to tilt</p>
-      <div class="jm__nav" id="jm-nav">${chips}<button class="jm-chip jm-chip--play" id="jm-play" type="button">▶ Play the journey</button></div>
+      <div class="jm__nav" id="jm-nav">${chips}<button class="jm-chip jm-chip--play" id="jm-play" type="button">${PLAY}</button></div>
       <i class="jm-br tl"></i><i class="jm-br tr"></i><i class="jm-br bl"></i><i class="jm-br brr"></i>
     </div>
     <aside class="jm__panel" id="jm-panel" aria-live="polite"></aside>
@@ -197,7 +198,7 @@ export function initJourneyMap() {
 
   function stopPlay() {
     if (playing) { playing.kill(); playing = null; }
-    $('jm-play').classList.remove('is-on'); $('jm-play').textContent = '▶ Play the journey';
+    $('jm-play').classList.remove('is-on'); $('jm-play').innerHTML = PLAY;
   }
   $('jm-play').addEventListener('click', () => {
     if (playing) return stopPlay();
@@ -303,7 +304,8 @@ export function initJourneyMap() {
       const sc = viewer.scene;
       sc.backgroundColor = C.Color.BLACK;
       sc.globe.enableLighting = false;
-      sc.globe.showGroundAtmosphere = true;
+      sc.globe.showGroundAtmosphere = !lite;
+      if (lite) { sc.fxaa = false; sc.globe.maximumScreenSpaceError = 3; sc.globe.preloadSiblings = false; sc.highDynamicRange = false; }
       sc.globe.depthTestAgainstTerrain = true;
       sc.globe.baseColor = C.Color.fromCssColorString('#06101f');
       sc.skyAtmosphere.show = true;
@@ -390,6 +392,8 @@ export function initJourneyMap() {
         applyState(stateAt(disp), now);
         setUI(nearestStop(disp));
       });
+      // phones: the background space scene sleeps while the map fills the screen (two WebGL scenes at once is what makes it stutter)
+      if (lite) new IntersectionObserver((es) => document.dispatchEvent(new CustomEvent('map:active', { detail: es[0].intersectionRatio > 0.5 })), { threshold: [0, 0.5, 1] }).observe(stage);
       // save battery when the map is off screen
       new IntersectionObserver((es) => { viewer.useDefaultRenderLoop = es[0].isIntersecting; }, { threshold: 0 }).observe(stage);
 

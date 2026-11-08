@@ -452,7 +452,10 @@ export async function createScene(canvas) {
         fastN = 0;
       }
     }
+    let asleep = false;
+    document.addEventListener('map:active', (e) => { asleep = !!e.detail; });
     renderer.setAnimationLoop(() => {
+      if (asleep) { lastNow = performance.now(); return; }
       watchSpeed();
       const dt = Math.min(clock.getDelta(), 0.05);
       const t = clock.elapsedTime;

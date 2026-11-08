@@ -889,21 +889,30 @@ a.contact__item:hover { border-color: var(--blue); transform: translateX(4px); }
 
 @media (max-width: 1000px) {
   .jm__track { height: 520vh; }
-  .jm__sticky { height: 78svh; min-height: 440px; top: calc(var(--nav-h) + 6px); }
-  .jm__panel { left: 10px; right: 10px; top: auto; bottom: 62px; width: auto; max-height: 38%; margin-top: 0; padding: 14px 16px; gap: 6px; }
-  .jm__panel h3 { font-size: 1.05rem; } .jm__panel p { font-size: 0.82rem; }
+  /* map on top, information card underneath: nothing covers the map or its buttons */
+  .jm__sticky { display: flex; flex-direction: column; gap: 10px; height: calc(100svh - var(--nav-h) - 12px); min-height: 460px; top: calc(var(--nav-h) + 6px); }
+  .jm__stage { flex: 1 1 0; min-height: 0; height: auto; border-radius: 16px; }
+  .jm__panel { position: static; flex: 0 0 auto; width: auto; max-height: 40%; margin: 0; padding: 14px 16px; gap: 6px; border-radius: 16px; background: rgba(9, 17, 38, 0.96); -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; overscroll-behavior: contain; }
+  .jm__panel h3 { font-size: 1.1rem; } .jm__panel p { font-size: 0.84rem; line-height: 1.5; }
   .jm-p__photo, .jm-p__dl, .jm-p__cta, .jm-p__note { display: none; }
   .jm-p__facts li { font-size: 0.82rem; }
-  .jm__hud--tl span:not(:first-child) { display: none; }
-  .jm__hud--tl span:nth-child(2) { display: inline; }
-  .jm__hint, .jm__scroll { display: none; }
-  .jm__explore { top: 14px; right: 14px; padding: 7px 11px; font-size: 0.64rem; }
-  .jm__hud--tr { top: 46px; right: 16px; }
-  .jm-chip { padding: 7px 10px; font-size: 0.62rem; }
-  .jm__nav { bottom: 10px; }
+  .jm__hud--tl, .jm__hint, .jm__scroll { display: none; }
+  .jm__hud--tr { top: 20px; left: 18px; right: auto; }
+  .jm__explore { top: 12px; right: 12px; padding: 8px 12px; font-size: 0.62rem; background: rgba(6, 12, 28, 0.86); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  /* one tidy row of chips, scrolls sideways if the screen is very narrow */
+  .jm__nav { left: 0; right: 0; bottom: 10px; transform: none; width: auto; max-width: none; padding: 0 12px; justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; gap: 6px; }
+  .jm__nav::-webkit-scrollbar { display: none; }
+  .jm-chip { flex: 0 0 auto; white-space: nowrap; padding: 8px 10px; font-size: 0.6rem; letter-spacing: 0.06em; background: rgba(6, 12, 28, 0.88); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .jm-long { display: none; }
+  .jm__credit { bottom: 52px; right: 10px; max-width: 60%; }
+  /* pin label: just the short word, no clipped sentence */
+  .jm-lab { padding: 4px 8px; background: rgba(6, 12, 28, 0.86); -webkit-backdrop-filter: none; backdrop-filter: none; left: 16px; top: -14px; }
+  .jm-lab__n { display: none; }
+  .jm-pin.flip .jm-lab { right: 16px; }
   .jm-tl__seg span { display: none; }
   .jm__tl { padding: 18px 16px 14px; }
 }
+@media (max-width: 380px) { .jm__nav { gap: 4px; padding: 0 8px; } .jm-chip { padding: 8px 7px; font-size: 0.56rem; letter-spacing: 0.03em; } }
 @media (prefers-reduced-motion: reduce) { .jm-pin.is-on .jm-pulse { animation: none; opacity: 0.5; } .jm__spin { animation: none; } }
 
 /* stop index (right side): numbered list, active stop highlighted */
