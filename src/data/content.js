@@ -627,7 +627,8 @@ export const visuals = {
 //  - Home is an AREA pin (Vallée des Prêtres), not the exact house, on purpose.
 // ---------------------------------------------------------------------------------------------
 export const journeyMap = {
-  cesiumToken: '',
+  // Read from the build environment (VITE_CESIUM_TOKEN) so the token never sits in the repository. Empty = flat satellite imagery only.
+  cesiumToken: (import.meta.env && import.meta.env.VITE_CESIUM_TOKEN) || '',
   label: 'Journey Map',
   title: 'From School to University',
   intro: 'A real satellite view of Mauritius: where I started, where I live, and where I am building my future in computer science.',
@@ -654,6 +655,14 @@ export const journeyMap = {
       photo: 'journey/uni.webp', photoAlt: 'Central administration building at the University of Technology, Mauritius',
       text: 'Where I am studying today and building my future in computer science and network security.',
       facts: [['Degree', 'BSc Computer Science – Network Security'], ['Started', 'April 2025'], ['Expected completion', 'April 2028']],
+    },
+    // Extra stop: a course, not part of the academic timeline. Add `years: '...'` below once you have the dates.
+    alc: {
+      id: 'alc', tag: 'Where I took a course', short: 'ALC', name: 'African Leadership College of Higher Education (ALC)', place: 'Mauritius',
+      lat: -20.1020126, lon: 57.5624306,
+      photo: 'journey/alc.webp', photoAlt: 'The red ALC letters outside the African Leadership College of Higher Education at sunset',
+      text: 'The place where I took the course Introduction to Robotics and Applied Intelligent Systems.',
+      facts: [['Course', 'Introduction to Robotics and Applied Intelligent Systems'], ['Place', 'African Leadership College of Higher Education']],
     },
   },
 };

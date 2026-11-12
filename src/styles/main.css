@@ -821,6 +821,19 @@ a.contact__item:hover { border-color: var(--blue); transform: translateX(4px); }
 .jm-pulse { position: absolute; left: -20px; top: -20px; width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid var(--jm-b); opacity: 0; }
 .jm-pin.is-on .jm-pulse { animation: jm-ping 2.4s ease-out infinite; }
 @keyframes jm-ping { 0% { transform: scale(0.3); opacity: 0.9; } 100% { transform: scale(1.8); opacity: 0; } }
+.jm-lock { position: absolute; left: -27px; top: -27px; width: 54px; height: 54px; pointer-events: none; opacity: 0;
+  background:
+    linear-gradient(var(--jm-b), var(--jm-b)) 0 0 / 13px 2px no-repeat, linear-gradient(var(--jm-b), var(--jm-b)) 0 0 / 2px 13px no-repeat,
+    linear-gradient(var(--jm-b), var(--jm-b)) 100% 0 / 13px 2px no-repeat, linear-gradient(var(--jm-b), var(--jm-b)) 100% 0 / 2px 13px no-repeat,
+    linear-gradient(var(--jm-b), var(--jm-b)) 0 100% / 13px 2px no-repeat, linear-gradient(var(--jm-b), var(--jm-b)) 0 100% / 2px 13px no-repeat,
+    linear-gradient(var(--jm-b), var(--jm-b)) 100% 100% / 13px 2px no-repeat, linear-gradient(var(--jm-b), var(--jm-b)) 100% 100% / 2px 13px no-repeat; }
+.jm-pin.is-on .jm-lock { animation: jm-lockin 0.9s cubic-bezier(0.2, 0.9, 0.2, 1) forwards, jm-beat 2.8s 1s ease-in-out infinite; }
+@keyframes jm-lockin { 0% { opacity: 0; transform: scale(2.8) rotate(50deg); } 55% { opacity: 1; } 100% { opacity: 0.95; transform: scale(1) rotate(0); } }
+@keyframes jm-beat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+.jm__hud--tr { flex-direction: column; align-items: flex-end; gap: 5px; }
+.jm__tele { font-size: 0.62rem; color: #cfd9ee; letter-spacing: 0.14em; min-height: 1em; }
+#jm-mode.is-acq { opacity: 0.7; animation: jm-blink 0.5s steps(2) infinite; }
+@keyframes jm-blink { 50% { opacity: 0.25; } }
 .jm-lab { position: absolute; left: 20px; top: -20px; display: grid; gap: 1px; text-align: left; white-space: nowrap; font-size: 0.82rem; color: #eaf1ff; padding: 6px 11px; border-radius: 9px; background: rgba(6, 12, 28, 0.72); border: 1px solid rgba(var(--sky-rgb), 0.22); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
 .jm-lab b { font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--jm-b); font-weight: 500; }
 .jm-lab { opacity: 0; transition: opacity 0.4s; }
@@ -909,12 +922,12 @@ a.contact__item:hover { border-color: var(--blue); transform: translateX(4px); }
   .jm__panel:has(.jm-p__photo) { min-height: 124px; }
   .jm-p__facts li { font-size: 0.82rem; }
   .jm__hud--tl, .jm__hint, .jm__scroll { display: none; }
-  .jm__hud--tr { top: 20px; left: 18px; right: auto; }
+  .jm__hud--tr { top: 18px; left: 18px; right: auto; align-items: flex-start; }
   .jm__explore { top: 12px; right: 12px; padding: 8px 12px; font-size: 0.62rem; background: rgba(6, 12, 28, 0.86); -webkit-backdrop-filter: none; backdrop-filter: none; }
   /* one tidy row of chips, scrolls sideways if the screen is very narrow */
-  .jm__nav { left: 0; right: 0; bottom: 10px; transform: none; width: auto; max-width: none; padding: 0 12px; justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; gap: 6px; }
+  .jm__nav { left: 0; right: 0; bottom: 10px; transform: none; width: auto; max-width: none; padding: 0 12px; justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; gap: 4px; }
   .jm__nav::-webkit-scrollbar { display: none; }
-  .jm-chip { flex: 0 0 auto; white-space: nowrap; padding: 8px 10px; font-size: 0.6rem; letter-spacing: 0.06em; background: rgba(6, 12, 28, 0.88); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .jm-chip { flex: 0 0 auto; white-space: nowrap; padding: 8px 7px; font-size: 0.58rem; letter-spacing: 0.03em; background: rgba(6, 12, 28, 0.88); -webkit-backdrop-filter: none; backdrop-filter: none; }
   .jm-long { display: none; }
   .jm__credit { bottom: 52px; right: 10px; max-width: 60%; }
   /* pin label: just the short word, no clipped sentence */
@@ -924,8 +937,8 @@ a.contact__item:hover { border-color: var(--blue); transform: translateX(4px); }
   .jm-tl__seg span { display: none; }
   .jm__tl { padding: 18px 16px 14px; }
 }
-@media (max-width: 380px) { .jm__nav { gap: 4px; padding: 0 8px; } .jm-chip { padding: 8px 7px; font-size: 0.56rem; letter-spacing: 0.03em; } }
-@media (prefers-reduced-motion: reduce) { .jm-pin.is-on .jm-pulse { animation: none; opacity: 0.5; } .jm__spin { animation: none; } }
+@media (max-width: 380px) { .jm__nav { gap: 3px; padding: 0 8px; } .jm-chip { padding: 8px 5px; font-size: 0.54rem; letter-spacing: 0.02em; } }
+@media (prefers-reduced-motion: reduce) { .jm-pin.is-on .jm-lock { animation: none; opacity: 0.9; } #jm-mode.is-acq { animation: none; } .jm-pin.is-on .jm-pulse { animation: none; opacity: 0.5; } .jm__spin { animation: none; } }
 
 /* stop index (right side): numbered list, active stop highlighted */
 .jm-idx { position: absolute; z-index: 6; right: 22px; top: 50%; transform: translateY(-50%); display: grid; gap: 2px; padding-right: 14px; border-right: 1px solid rgba(var(--sky-rgb), 0.25); }

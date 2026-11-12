@@ -1,11 +1,12 @@
 // "From School to University": a cinematic 3D satellite map of Mauritius (CesiumJS, loaded on demand from a CDN).
 import { gsap } from 'gsap';
 import { journeyMap as J } from './data/content.js';
+import { getQuality } from './quality.js';
 
 const CESIUM_VERSION = '1.120.0';
 const CDN = (typeof window !== 'undefined' && window.__CESIUM_CDN__) || `https://cdn.jsdelivr.net/npm/cesium@${CESIUM_VERSION}/Build/Cesium/`;
 const ESRI = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
-const ORDER = ['home', 'school', 'uni'];
+const ORDER = ['home', 'school', 'uni', 'alc'];
 const PLAY = '▶ Play<span class="jm-long"> the journey</span>';
 
 const esc = (s = '') => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -17,6 +18,11 @@ export const haversine = (a, b) => {
   const r = (d) => (d * Math.PI) / 180;
   const h = Math.sin(r(b.lat - a.lat) / 2) ** 2 + Math.cos(r(a.lat)) * Math.cos(r(b.lat)) * Math.sin(r(b.lon - a.lon) / 2) ** 2;
   return 12742 * Math.asin(Math.sqrt(h));
+};
+const bearing = (a, b) => {
+  const r = (d) => (d * Math.PI) / 180, y = Math.sin(r(b.lon - a.lon)) * Math.cos(r(b.lat));
+  const x = Math.cos(r(a.lat)) * Math.sin(r(b.lat)) - Math.sin(r(a.lat)) * Math.cos(r(b.lat)) * Math.cos(r(b.lon - a.lon));
+  return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
 };
 const km = (n) => (n < 10 ? n.toFixed(1) : Math.round(n)) + ' km';
 
@@ -39,7 +45,7 @@ const loadCesium = (() => {
 /* ------------------------------------------------------------------------------------------ markup */
 export function mapMarkup() {
   const P = J.places;
-  const pins = ORDER.map((id) => `<button class="jm-pin" type="button" data-id="${id}" aria-label="${esc(P[id].short)}: ${esc(P[id].name)}"><i class="jm-dot"></i><i class="jm-pulse"></i><span class="jm-lab"><b>${esc(P[id].short)}</b><span class="jm-lab__n">${esc(P[id].name.replace(/ \(.*\)/, ''))}</span></span></button>`).join('');
+  const pins = ORDER.map((id) => `<button class="jm-pin" type="button" data-id="${id}" aria-label="${esc(P[id].short)}: ${esc(P[id].name)}"><i class="jm-lock"></i><i class="jm-dot"></i><i class="jm-pulse"></i><span class="jm-lab"><b>${esc(P[id].short)}</b><span class="jm-lab__n">${esc(P[id].name.replace(/ \(.*\)/, ''))}</span></span></button>`).join('');
   const chips = [['overview', 'Overview'], ...ORDER.map((id) => [id, P[id].short])].map(([id, t]) => `<button class="jm-chip" type="button" data-id="${id}">${esc(t)}</button>`).join('');
   return `
   <div class="jm" id="jm">
@@ -52,8 +58,8 @@ export function mapMarkup() {
       <div class="jm__ov" id="jm-ov">${pins}</div>
       <div class="jm__load" id="jm-load"><span class="jm__spin"></span><span id="jm-load-t">Loading satellite view…</span></div>
       <div class="jm__hud jm__hud--tl"><span>LAT <b id="jm-lat">—</b></span><span>LON <b id="jm-lon">—</b></span><span>ALT <b id="jm-alt">—</b></span></div>
-      <div class="jm__hud jm__hud--tr"><span id="jm-mode">OVERVIEW</span></div>
-      <nav class="jm-idx" id="jm-idx" aria-label="Journey stops">${[['overview', 'Mauritius'], ['home', P.home.short], ['school', P.school.short], ['uni', P.uni.short], ['route', 'The route']].map(([id, t], i) => `<button type="button" data-id="${id}"><span>${String(i + 1).padStart(2, '0')}</span>${esc(t)}</button>`).join('')}</nav>
+      <div class="jm__hud jm__hud--tr"><span id="jm-mode">OVERVIEW</span><span id="jm-tele" class="jm__tele"></span></div>
+      <nav class="jm-idx" id="jm-idx" aria-label="Journey stops">${[['overview', 'Mauritius'], ['home', P.home.short], ['school', P.school.short], ['uni', P.uni.short], ['alc', P.alc.short], ['route', 'The route']].map(([id, t], i) => `<button type="button" data-id="${id}"><span>${String(i + 1).padStart(2, '0')}</span>${esc(t)}</button>`).join('')}</nav>
       <i class="jm__prog"><b id="jm-prog"></b></i>
       <p class="jm__scroll" id="jm-scrollhint"><span></span><em id="jm-scrolltxt">Scroll to travel</em></p>
       <button class="jm__explore" id="jm-explore" type="button">Explore the map</button>
@@ -76,22 +82,22 @@ function progressPct(p) {
   return Math.max(0, Math.min(100, ((n - a) / (b - a)) * 100));
 }
 
-const CH = { overview: 1, home: 2, school: 3, uni: 4, route: 5 };
-const chap = (id) => `${String(CH[id]).padStart(2, '0')} / 05 · `;
+const CH = { overview: 1, home: 2, school: 3, uni: 4, alc: 5, route: 6 };
+const chap = (id) => `${String(CH[id]).padStart(2, '0')} / 06 · `;
 
 function panelHtml(id) {
   const P = J.places;
   if (id === 'overview') {
     return `<p class="jm-p__tag">${chap(id)}Overview</p><h3>Port Louis, Mauritius</h3>
-      <p>Three real places in one story. Start at home, follow the line to school, then on to university.</p>
-      <ul class="jm-p__facts"><li><span>1</span>Home, my starting point</li><li><span>2</span>School, where it began</li><li><span>3</span>University, where I am building my future</li></ul>
+      <p>Four real places in one story. Start at home, follow the line to school, then on to university. One more stop: the college where I took a robotics course.</p>
+      <ul class="jm-p__facts"><li><span>1</span>Home, my starting point</li><li><span>2</span>School, where it began</li><li><span>3</span>University, where I am building my future</li><li><span>4</span>ALC, where I took a robotics course</li></ul>
       <p class="jm-p__cta">Tap a marker, a chip below the map, or press play.</p>`;
   }
   if (id === 'route') {
-    const d1 = haversine(P.home, P.school), d2 = haversine(P.school, P.uni);
+    const d1 = haversine(P.home, P.school), d2 = haversine(P.school, P.uni), d3 = haversine(P.uni, P.alc);
     return `<p class="jm-p__tag">${chap(id)}The whole route</p><h3>${km(d1 + d2)} in a straight line</h3>
       <p>From home, to the school where it began, to the university where I am building my future. All within the Port Louis area.</p>
-      <ul class="jm-p__facts"><li><span>H→S</span>${km(d1)}</li><li><span>S→U</span>${km(d2)}</li></ul><p class="jm-p__note">Straight-line distances, not road distances.</p>`;
+      <ul class="jm-p__facts"><li><span>H→S</span>${km(d1)}</li><li><span>S→U</span>${km(d2)}</li><li><span>U→ALC</span>${km(d3)}</li></ul><p class="jm-p__note">Straight-line distances, not road distances. The line drawn on the map covers home, school and university; ALC is a separate stop.</p>`;
   }
   const p = P[id];
   const photo = p.photo ? `<figure class="jm-p__photo"><img src="${asset(p.photo)}" alt="${esc(p.photoAlt || '')}" loading="lazy" decoding="async" /></figure>` : '';
@@ -127,7 +133,8 @@ export function initJourneyMap() {
   const $ = (id) => document.getElementById(id);
   const stage = $('jm-stage'), panel = $('jm-panel'), pinsEl = $('jm-ov');
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const lite = innerWidth < 800 || matchMedia('(pointer: coarse)').matches || (navigator.hardwareConcurrency || 8) <= 4;
+  const quality = getQuality();
+  const lite = quality === 'low' ? true : quality === 'high' ? false : innerWidth < 800 || matchMedia('(pointer: coarse)').matches || (navigator.hardwareConcurrency || 8) <= 4;
   const pins = Object.fromEntries([...pinsEl.querySelectorAll('.jm-pin')].map((el) => [el.dataset.id, el]));
   const chips = [...root.querySelectorAll('.jm-chip[data-id], .jm-idx button[data-id]')];
   $('jm-tl').innerHTML = timelineHtml();
@@ -138,7 +145,7 @@ export function initJourneyMap() {
   // Mouse (desktop): the wheel works the journey while the cursor is inside the map. Touch/small screens: page scroll does.
   const wheelMode = matchMedia('(hover: hover) and (pointer: fine)').matches && innerWidth > 1000;
   root.classList.toggle('jm--wheel', wheelMode);
-  const STOPS = [['overview', 0], ['home', 0.2], ['school', 0.45], ['uni', 0.7], ['route', wheelMode ? 1 : 0.93]];
+  const STOPS = [['overview', 0], ['home', 0.16], ['school', 0.36], ['uni', 0.56], ['alc', 0.76], ['route', wheelMode ? 1 : 0.94]];
   const SPOS = Object.fromEntries(STOPS);
   const W = { wp: 0 }; // wheel progress
   const clamp01 = (x) => Math.max(0, Math.min(1, x));
@@ -165,13 +172,50 @@ export function initJourneyMap() {
     chips.forEach((c) => c.classList.toggle('is-on', c.dataset.id === id));
     Object.entries(pins).forEach(([k, el]) => el.classList.toggle('is-on', k === id || id === 'route'));
     root.querySelectorAll('.jm-tl__seg').forEach((b) => b.classList.toggle('is-on', b.dataset.id === id));
-    $('jm-mode').textContent = id === 'overview' ? 'OVERVIEW' : id === 'route' ? 'ROUTE' : J.places[id].short.toUpperCase();
+    setMode(id);
+  }
+  // arrival effect: the readout says ACQUIRING, then LOCKED with distance and bearing from the previous stop
+  let modeTok = 0;
+  function teleFor(id) {
+    if (id === 'overview') return 'ISLAND VIEW';
+    if (id === 'route') return 'ALL STOPS';
+    const i = ORDER.indexOf(id);
+    if (i <= 0) return 'START POINT';
+    const a = J.places[ORDER[i - 1]], b = J.places[id];
+    return `${km(haversine(a, b))} · ${Math.round(bearing(a, b))}° FROM ${a.short.toUpperCase()}`;
+  }
+  function setMode(id) {
+    const el = $('jm-mode'), tele = $('jm-tele'), tok = ++modeTok;
+    const name = id === 'overview' ? 'OVERVIEW' : id === 'route' ? 'ROUTE' : J.places[id].short.toUpperCase();
+    if (reduce || !ready || id === 'overview' || id === 'route') { el.classList.remove('is-acq'); el.textContent = name; tele.textContent = teleFor(id); return; }
+    el.classList.add('is-acq'); el.textContent = 'ACQUIRING…'; tele.textContent = '';
+    setTimeout(() => { if (tok !== modeTok) return; el.classList.remove('is-acq'); el.textContent = 'LOCKED · ' + name; tele.textContent = teleFor(id); }, 650);
+  }
+  // pre-load the satellite tiles around the NEXT stop so it is sharp when the camera arrives (skipped on data saver / slow networks / Cesium Ion imagery)
+  const warmed = new Set();
+  function warm(id) {
+    const p = J.places[id];
+    if (!p || warmed.has(id) || J.cesiumToken) return;
+    warmed.add(id);
+    const nc = navigator.connection;
+    if (nc && (nc.saveData || /(^|-)2g$/.test(nc.effectiveType || ''))) return;
+    const urls = [];
+    [15, 16, 17].forEach((z) => {
+      const n = 2 ** z, lat = (p.lat * Math.PI) / 180;
+      const x = Math.floor(((p.lon + 180) / 360) * n), y = Math.floor(((1 - Math.log(Math.tan(lat) + 1 / Math.cos(lat)) / Math.PI) / 2) * n);
+      for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) urls.push(ESRI.replace('{z}', z).replace('{x}', x + dx).replace('{y}', y + dy));
+    });
+    let i = 0;
+    const next = () => { if (i >= urls.length) return; fetch(urls[i++], { priority: 'low' }).catch(() => {}).finally(next); };
+    next(); next();
   }
   let showRoutes = () => {};
   function setUI(id) {
     if (id === cur) return;
     cur = id;
     mark(id); showPanel(id); showRoutes(id);
+    const next = ORDER[ORDER.indexOf(id) + 1] || (id === 'overview' ? ORDER[0] : null);
+    if (next) setTimeout(() => warm(next), 1200);
   }
 
   // Scrolling the page drives the camera. Clicking a marker/chip/timeline bar scrolls to that stop.
@@ -226,7 +270,7 @@ export function initJourneyMap() {
   const angLerp = (a, b, t) => { let d = ((b - a + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; return a + d * t; };
   function buildShots() {
     const P = J.places, rad = (d) => (d * Math.PI) / 180;
-    const set = { home: [2600, 25, -38], school: [850, -40, -34], uni: [1000, 55, -34] };
+    const set = { home: [2600, 25, -38], school: [850, -40, -34], uni: [1000, 55, -34], alc: [900, 25, -36] };
     const arr = [{ lon: 57.55, lat: -20.25, hgt: 0, hd: 0, pit: rad(-50), rng: 261000 }];
     ORDER.forEach((k) => { const s = set[k]; arr.push({ lon: P[k].lon, lat: P[k].lat, hgt: 0, hd: rad(s[1]), pit: rad(s[2]), rng: s[0] }); });
     const lons = ORDER.map((k) => P[k].lon), lats = ORDER.map((k) => P[k].lat);
@@ -334,7 +378,7 @@ export function initJourneyMap() {
       const carts = ORDER.map((k) => C.Cartographic.fromDegrees(J.places[k].lon, J.places[k].lat));
       if (terrain) { try { await C.sampleTerrainMostDetailed(terrain, carts); } catch (e) { /* flat */ } }
       ORDER.forEach((k, i) => { shots[i + 1].hgt = carts[i].height || 0; });
-      shots[4].hgt = (shots[1].hgt + shots[2].hgt + shots[3].hgt) / 3;
+      shots[shots.length - 1].hgt = (shots[1].hgt + shots[2].hgt + shots[3].hgt + shots[4].hgt) / 4;
       const css = (v, f) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || f;
       const colA = C.Color.fromCssColorString(css('--lg-b', '#38a8ff')), colB = C.Color.fromCssColorString(css('--lg-c', '#67e8f9'));
       const BEACON = 240;
@@ -359,9 +403,19 @@ export function initJourneyMap() {
       const routes = [['home', 'school'], ['school', 'uni']].map(([A, B]) => {
         const pts = arc(A, B), st = { a: 0 };
         viewer.entities.add({ polyline: { positions: pts, width: 2.2, material: new C.ColorMaterialProperty(new C.CallbackProperty(() => colB.withAlpha(0.9 * st.a), false)) } });
+        // a small light travels along the line (a short fading tail behind it)
+        if (!reduce) {
+          const tail = lite ? 2 : 4, last = pts.length - 1;
+          for (let k = 0; k < tail; k++) {
+            viewer.entities.add({
+              position: new C.CallbackProperty(() => pts[Math.min(last, Math.floor((((performance.now() / 3400 - k * 0.014) % 1) + 1) % 1 * last))], false),
+              point: { pixelSize: 8 - k * 1.5, color: new C.CallbackProperty(() => C.Color.WHITE.withAlpha(st.a * (1 - k / tail) * 0.95), false), disableDepthTestDistance: Number.POSITIVE_INFINITY },
+            });
+          }
+        }
         return st;
       });
-      showRoutes = (id) => routes.forEach((r, i) => gsap.to(r, { a: id === 'route' || id === 'uni' || (id === 'school' && i === 0) ? 1 : 0, duration: reduce ? 0 : 1.4, ease: 'power2.out' }));
+      showRoutes = (id) => routes.forEach((r, i) => gsap.to(r, { a: id === 'route' || id === 'uni' || id === 'alc' || (id === 'school' && i === 0) ? 1 : 0, duration: reduce ? 0 : 1.4, ease: 'power2.out' }));
 
       // DOM pins follow the 3D markers
       const win = new C.Cartesian2();
@@ -379,6 +433,10 @@ export function initJourneyMap() {
         $('jm-alt').textContent = c.height > 2e5 ? Math.round(c.height / 1000).toLocaleString() + ' km' : Math.round(c.height) + ' m';
       });
 
+      // phones: render at normal size while moving (smooth), then sharpen once the camera settles
+      let sharp = false, lastMove = performance.now();
+      const sharpScale = Math.min(window.devicePixelRatio || 1, 1.5);
+      const setSharp = (on) => { if (!lite || sharp === on) return; sharp = on; viewer.resolutionScale = on ? sharpScale : 1; };
       // every frame: read the scroll position and glide the camera along the path
       viewer.clock.onTick.addEventListener(() => {
         const now = performance.now(), dt = Math.min(0.1, (now - lastT) / 1000);
@@ -386,6 +444,8 @@ export function initJourneyMap() {
         const target = progress();
         prog.style.width = (target * 100).toFixed(1) + '%';
         if (!wheelMode) $('jm-scrollhint').classList.toggle('is-gone', target > 0.02);
+        if (Math.abs(target - disp) > 2e-4 || playing || !driving) lastMove = now;
+        setSharp(explore || now - lastMove > 280);
         if (explore || !driving) return;
         disp = reduce ? target : disp + (target - disp) * (1 - Math.exp(-dt * 4.2));
         if (Math.abs(target - disp) < 1e-5) disp = target;
